@@ -1,0 +1,9 @@
+# RDD2022 Pothole-Only YOLO Dataset (Class 0: pothole)
+path: c:\Users\Manali\OneDrive\Desktop\New folder (4)\pothole_yolo_dataset
+train: images/train
+val: images/val
+test: images/test
+
+nc: 1
+names:
+  0: pothole
