@@ -45,28 +45,27 @@ async def detect(request: Request):
 
         height, width, _ = img.shape
 
-        # Run inference (suppress console output for speed)
-        results = model(img, verbose=False)
+        # Run inference with tuned parameters for high recall & accuracy
+        results = model(img, imgsz=640, conf=0.20, iou=0.45, verbose=False)
 
-        # Format predictions exactly like Roboflow expects
+        # Format predictions with explicit top-left coordinates (x1, y1, width, height)
         predictions = []
         for result in results:
             boxes = result.boxes
             for box in boxes:
-                # Get box coordinates
+                # Get box coordinates (x1, y1: top-left, x2, y2: bottom-right)
                 x1, y1, x2, y2 = box.xyxy[0].tolist()
                 conf = box.conf[0].item()
                 cls = int(box.cls[0].item())
 
-                # Roboflow expects center x, center y, width, height in pixels
                 box_w = x2 - x1
                 box_h = y2 - y1
-                box_cx = x1 + (box_w / 2)
-                box_cy = y1 + (box_h / 2)
 
                 predictions.append({
-                    "x": box_cx,
-                    "y": box_cy,
+                    "x": x1,
+                    "y": y1,
+                    "x1": x1,
+                    "y1": y1,
                     "width": box_w,
                     "height": box_h,
                     "confidence": conf,

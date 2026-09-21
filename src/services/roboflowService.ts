@@ -56,18 +56,22 @@ export async function detectPotholesRoboflow(
       return [];
     }
 
-    // Convert pixels to normalized ratio 0-1
+    // Convert Roboflow center pixel coordinates to normalized top-left coordinates (0-1)
     const imgW = data.image?.width || 640;
     const imgH = data.image?.height || 480;
 
-    return data.predictions.map(pred => ({
-      x: pred.x / imgW,
-      y: pred.y / imgH,
-      width: pred.width / imgW,
-      height: pred.height / imgH,
-      confidence: Math.round(pred.confidence * 100),
-      class: pred.class || 'pothole',
-    }));
+    return data.predictions.map(pred => {
+      const topX = pred.x - (pred.width / 2);
+      const topY = pred.y - (pred.height / 2);
+      return {
+        x: Math.max(0, topX / imgW),
+        y: Math.max(0, topY / imgH),
+        width: Math.min(1, pred.width / imgW),
+        height: Math.min(1, pred.height / imgH),
+        confidence: Math.round(pred.confidence * 100),
+        class: pred.class || 'pothole',
+      };
+    });
   } catch (error) {
     console.warn('Roboflow API call failed, using Computer Vision fallback:', error);
     throw error;

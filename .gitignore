@@ -21,10 +21,20 @@ venv/
 runs/
 pothole_yolo_dataset/images/
 pothole_yolo_dataset/labels/
+pothole_yolo_dataset/Pothole.yolov8/
 # Keep dataset metadata and training code, ignore the downloaded image corpus.
 pothole_yolo_dataset/**/*.zip
 *.pt
 *.onnx
+
+# Dataset and media image files
+*.jpg
+*.jpeg
+*.png
+*.JPG
+*.JPEG
+*.PNG
+*.webp
 
 # Local video, telemetry, and generated exports
 *.mp4

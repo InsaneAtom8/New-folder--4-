@@ -61,13 +61,17 @@ export const PRESET_ROUTES: RoutePreset[] = [
 /**
  * Generates a smooth, realistic GPS track for a video of specified duration in seconds
  */
-export function generateSyntheticTrack(durationSeconds: number, presetId: string = 'mumbai-western-express'): GPSPoint[] {
+export function generateSyntheticTrack(
+  durationSeconds: number,
+  presetId: string = 'mumbai-western-express',
+  customCoords?: { lat: number; lng: number }
+): GPSPoint[] {
   const preset = PRESET_ROUTES.find(r => r.id === presetId) || PRESET_ROUTES[0];
   const points: GPSPoint[] = [];
 
   const totalPoints = Math.max(10, Math.ceil(durationSeconds * 2)); // Every 0.5s
-  let currentLat = preset.startLat;
-  let currentLng = preset.startLng;
+  let currentLat = customCoords ? customCoords.lat : preset.startLat;
+  let currentLng = customCoords ? customCoords.lng : preset.startLng;
 
   // Conversion: ~111,000 meters per degree lat/lng
   const speedMetersPerSec = (preset.avgSpeedKmH * 1000) / 3600;
