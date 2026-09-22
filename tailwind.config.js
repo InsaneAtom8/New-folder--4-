@@ -8,6 +8,21 @@ export default {
   theme: {
     extend: {
       colors: {
+        romer: {
+          bg: '#070708',
+          card: '#101112',
+          sidebar: '#0d0e0f',
+          panel: '#111214',
+          divider: '#232426',
+          'divider-light': '#1B1C1E',
+          'text-muted': '#9A9DA3',
+          'text-main': '#e5e2e3',
+          primary: '#5E6BFF',
+          'primary-hover': '#7a85ff',
+          cyan: '#50d8e9',
+          amber: '#ffb689',
+          lime: '#E5FD17',
+        },
         brand: {
           50: '#eefbff',
           100: '#d5f5ff',
@@ -23,14 +38,17 @@ export default {
           critical: '#ef4444',
         },
         dark: {
-          bg: '#0b0f19',
-          card: '#111827',
-          panel: '#1f293d',
-          border: '#374151',
+          bg: '#070708',
+          card: '#101112',
+          panel: '#111214',
+          border: '#232426',
         }
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
+        h3: ['Manrope', 'sans-serif'],
+        h2: ['Manrope', 'sans-serif'],
+        h1: ['Manrope', 'sans-serif'],
       },
       animation: {
         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
@@ -47,3 +65,4 @@ export default {
   },
   plugins: [],
 }
+

@@ -85,10 +85,10 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({ onVideoLoaded }) =
       
       {/* Intro Header */}
       <div className="text-center space-y-2">
-        <h2 className="text-2xl lg:text-3xl font-extrabold text-white tracking-tight">
+        <h2 className="font-h2 text-2xl lg:text-4xl font-bold text-romer-text-main tracking-tight">
           Pothole Vision — Dashcam Ingestion
         </h2>
-        <p className="text-sm text-slate-400 max-w-xl mx-auto">
+        <p className="text-sm text-romer-text-muted max-w-xl mx-auto">
           Upload your video to run YOLOv12 PyResearch AI detection.
           Optionally attach GPX/CSV telemetry or auto-geotag your location.
         </p>
@@ -105,13 +105,13 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({ onVideoLoaded }) =
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         
         {/* Step 1: Video File Upload (Required) */}
-        <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 space-y-4 flex flex-col justify-between">
+        <div className="bg-romer-card border border-romer-divider rounded-xl p-5 space-y-4 flex flex-col justify-between inner-glow">
           <div>
             <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-1.5">
-                <Video className="w-4 h-4" /> 1. Dashcam Video
+              <span className="text-xs font-bold uppercase tracking-widest text-romer-cyan flex items-center gap-1.5 font-mono">
+                <Video className="w-4 h-4" /> 1. DASHCAM VIDEO
               </span>
-              <span className="text-[10px] bg-cyan-500/10 text-cyan-400 font-mono px-2 py-0.5 rounded border border-cyan-500/20">
+              <span className="text-[10px] bg-romer-cyan/10 text-romer-cyan font-mono px-2 py-0.5 rounded border border-romer-cyan/20 uppercase tracking-wider">
                 Required
               </span>
             </div>
@@ -125,12 +125,12 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({ onVideoLoaded }) =
                 setIsDragOverVideo(false);
                 if (e.dataTransfer.files?.[0]) handleVideoSelect(e.dataTransfer.files[0]);
               }}
-              className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all duration-200 ${
+              className={`border border-dashed rounded-xl p-6 text-center cursor-pointer transition-all duration-200 ${
                 videoFile
                   ? 'border-emerald-500/50 bg-emerald-950/10'
                   : isDragOverVideo
-                  ? 'border-cyan-400 bg-cyan-950/20'
-                  : 'border-slate-700/80 hover:border-slate-600 bg-slate-950/50'
+                  ? 'border-romer-cyan bg-romer-cyan/10'
+                  : 'border-romer-divider hover:border-romer-text-muted bg-[#070708]'
               }`}
             >
               {videoFile ? (
@@ -138,16 +138,16 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({ onVideoLoaded }) =
                   <div className="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto">
                     <CheckCircle2 className="w-6 h-6" />
                   </div>
-                  <h4 className="text-sm font-bold text-white truncate max-w-[240px] mx-auto">{videoFile.name}</h4>
-                  <p className="text-xs font-mono text-slate-400">
+                  <h4 className="text-sm font-bold text-romer-text-main truncate max-w-[240px] mx-auto">{videoFile.name}</h4>
+                  <p className="text-xs font-mono text-romer-text-muted">
                     {(videoFile.size / (1024 * 1024)).toFixed(2)} MB • Ready
                   </p>
                 </div>
               ) : (
                 <div className="space-y-2">
-                  <UploadCloud className="w-10 h-10 text-cyan-400 mx-auto animate-bounce" />
-                  <h4 className="text-sm font-semibold text-slate-200">Drag & Drop MP4 Video File</h4>
-                  <p className="text-xs text-slate-400">Click to browse filesystem</p>
+                  <UploadCloud className="w-10 h-10 text-romer-cyan mx-auto animate-bounce" />
+                  <h4 className="text-sm font-semibold text-romer-text-main">Drag & Drop MP4 Video File</h4>
+                  <p className="text-xs text-romer-text-muted">Click to browse filesystem</p>
                 </div>
               )}
             </div>
@@ -162,13 +162,13 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({ onVideoLoaded }) =
         </div>
 
         {/* Step 2: GPS Telemetry Log Upload (Optional) */}
-        <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 space-y-4 flex flex-col justify-between">
+        <div className="bg-romer-card border border-romer-divider rounded-xl p-5 space-y-4 flex flex-col justify-between inner-glow">
           <div>
             <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
-                <FileCode className="w-4 h-4" /> 2. GPS Location Log
+              <span className="text-xs font-bold uppercase tracking-widest text-romer-amber flex items-center gap-1.5 font-mono">
+                <FileCode className="w-4 h-4" /> 2. GPS LOCATION LOG
               </span>
-              <span className="text-[10px] bg-amber-500/10 text-amber-400 font-mono px-2 py-0.5 rounded border border-amber-500/20">
+              <span className="text-[10px] bg-romer-amber/10 text-romer-amber font-mono px-2 py-0.5 rounded border border-romer-amber/20 uppercase tracking-wider">
                 Optional
               </span>
             </div>
@@ -182,12 +182,12 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({ onVideoLoaded }) =
                 setIsDragOverGps(false);
                 if (e.dataTransfer.files?.[0]) handleGpsSelect(e.dataTransfer.files[0]);
               }}
-              className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all duration-200 ${
+              className={`border border-dashed rounded-xl p-6 text-center cursor-pointer transition-all duration-200 ${
                 gpsFile
                   ? 'border-emerald-500/50 bg-emerald-950/10'
                   : isDragOverGps
-                  ? 'border-amber-400 bg-amber-950/20'
-                  : 'border-slate-700/80 hover:border-slate-600 bg-slate-950/50'
+                  ? 'border-romer-amber bg-romer-amber/10'
+                  : 'border-romer-divider hover:border-romer-text-muted bg-[#070708]'
               }`}
             >
               {gpsFile ? (
@@ -195,16 +195,16 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({ onVideoLoaded }) =
                   <div className="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto">
                     <CheckCircle2 className="w-6 h-6" />
                   </div>
-                  <h4 className="text-sm font-bold text-white truncate max-w-[240px] mx-auto">{gpsFile.name}</h4>
-                  <p className="text-xs font-mono text-amber-400 font-semibold">
+                  <h4 className="text-sm font-bold text-romer-text-main truncate max-w-[240px] mx-auto">{gpsFile.name}</h4>
+                  <p className="text-xs font-mono text-romer-amber font-semibold">
                     {parsedGpsPoints.length} Trackpoints
                   </p>
                 </div>
               ) : (
                 <div className="space-y-2">
-                  <MapPin className="w-10 h-10 text-amber-400 mx-auto" />
-                  <h4 className="text-sm font-semibold text-slate-200">Upload GPX / NMEA / CSV Log</h4>
-                  <p className="text-xs text-slate-400">Syncs video timestamp to GPS</p>
+                  <MapPin className="w-10 h-10 text-romer-amber mx-auto" />
+                  <h4 className="text-sm font-semibold text-romer-text-main">Upload GPX / NMEA / CSV Log</h4>
+                  <p className="text-xs text-romer-text-muted">Syncs video timestamp to GPS</p>
                 </div>
               )}
             </div>
@@ -221,9 +221,9 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({ onVideoLoaded }) =
             <button
               type="button"
               onClick={handleDetectLiveLocation}
-              className="text-xs bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all"
+              className="text-xs bg-romer-card hover:bg-romer-panel text-romer-cyan border border-romer-divider font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all inner-glow"
             >
-              <MapPin className="w-3.5 h-3.5 text-cyan-400" />
+              <MapPin className="w-3.5 h-3.5 text-romer-cyan" />
               <span>Use Current GPS Position</span>
             </button>
             {locationStatus && (
@@ -237,12 +237,12 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({ onVideoLoaded }) =
       </div>
 
       {/* Step 3: AI Vision Model Selector */}
-      <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 space-y-3">
+      <div className="bg-romer-card border border-romer-divider rounded-xl p-5 space-y-3 inner-glow">
         <div className="flex items-center justify-between">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-2">
-            <Sparkles className="w-4 h-4" /> AI Detection Engine
+          <h3 className="text-xs font-bold uppercase tracking-widest text-romer-cyan flex items-center gap-2 font-mono">
+            <Sparkles className="w-4 h-4" /> AI DETECTION ENGINE
           </h3>
-          <span className="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded font-mono">
+          <span className="text-[10px] bg-romer-sidebar text-romer-text-muted px-2 py-0.5 rounded font-mono border border-romer-divider">
             Confidence Threshold: {Math.round(aiConfig.confidenceThreshold * 100)}%
           </span>
         </div>
@@ -254,19 +254,19 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({ onVideoLoaded }) =
             onClick={() => setAIConfig({ ...aiConfig, activeModelPreset: 'rdd2022-custom' })}
             className={`p-4 rounded-xl border cursor-pointer transition-all ${
               aiConfig.activeModelPreset === 'rdd2022-custom'
-                ? 'bg-cyan-950/30 border-cyan-400 shadow-md shadow-cyan-500/10'
-                : 'bg-slate-950/50 border-slate-800 hover:border-slate-700'
+                ? 'bg-romer-primary/10 border-romer-primary shadow-md shadow-romer-primary/10'
+                : 'bg-[#070708] border-romer-divider hover:border-romer-text-muted'
             }`}
           >
             <div className="flex items-center justify-between mb-1">
-              <span className="text-xs font-bold text-white flex items-center gap-1.5">
+              <span className="text-xs font-bold text-romer-text-main flex items-center gap-1.5">
                 ⚡ YOLOv12 PyResearch (Local PyTorch)
               </span>
               {aiConfig.activeModelPreset === 'rdd2022-custom' && (
-                <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
+                <span className="w-2 h-2 rounded-full bg-romer-primary animate-ping" />
               )}
             </div>
-            <p className="text-[11px] text-slate-400 leading-snug">
+            <p className="text-[11px] text-romer-text-muted leading-snug">
               Trained best.pt model running locally via Python FastAPI endpoint
             </p>
           </div>
@@ -276,19 +276,19 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({ onVideoLoaded }) =
             onClick={() => setAIConfig({ ...aiConfig, activeModelPreset: 'roboflow-yolo' })}
             className={`p-4 rounded-xl border cursor-pointer transition-all ${
               aiConfig.activeModelPreset === 'roboflow-yolo'
-                ? 'bg-amber-950/30 border-amber-400 shadow-md shadow-amber-500/10'
-                : 'bg-slate-950/50 border-slate-800 hover:border-slate-700'
+                ? 'bg-romer-amber/10 border-romer-amber shadow-md shadow-romer-amber/10'
+                : 'bg-[#070708] border-romer-divider hover:border-romer-text-muted'
             }`}
           >
             <div className="flex items-center justify-between mb-1">
-              <span className="text-xs font-bold text-white flex items-center gap-1.5">
+              <span className="text-xs font-bold text-romer-text-main flex items-center gap-1.5">
                 🌐 Roboflow YOLO Cloud API
               </span>
               {aiConfig.activeModelPreset === 'roboflow-yolo' && (
-                <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+                <span className="w-2 h-2 rounded-full bg-romer-amber animate-ping" />
               )}
             </div>
-            <p className="text-[11px] text-slate-400 leading-snug">
+            <p className="text-[11px] text-romer-text-muted leading-snug">
               Hosted inference API for remote detection model
             </p>
           </div>
@@ -303,8 +303,8 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({ onVideoLoaded }) =
           onClick={handleStartProcessing}
           className={`px-8 py-3.5 rounded-xl font-bold text-sm tracking-wide transition-all duration-300 flex items-center gap-2.5 shadow-xl ${
             videoFile
-              ? 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 shadow-cyan-500/25 cursor-pointer'
-              : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
+              ? 'bg-romer-primary hover:bg-romer-primary-hover text-white shadow-romer-primary/25 cursor-pointer font-h3'
+              : 'bg-romer-sidebar text-romer-text-muted cursor-not-allowed border border-romer-divider'
           }`}
         >
           <Sparkles className="w-4 h-4" />
@@ -317,3 +317,4 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({ onVideoLoaded }) =
     </div>
   );
 };
+

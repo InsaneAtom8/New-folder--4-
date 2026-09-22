@@ -28,11 +28,11 @@ const MainContent: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-between">
+    <div className="min-h-screen bg-romer-bg text-romer-text-main flex flex-col justify-between selection:bg-romer-primary selection:text-white">
       
       <Navbar />
 
-      <main className="flex-1 p-4 lg:p-6">
+      <main className="flex-1 p-4 lg:p-6 bg-romer-bg">
         {activeTab === 'uploader' && (
           activeVideoFile ? (
             <DetectionCanvas
@@ -53,15 +53,15 @@ const MainContent: React.FC = () => {
         {activeTab === 'table' && <PotholeTable />}
       </main>
 
-      {/* Enterprise Dark Footer */}
-      <footer className="border-t border-slate-800/80 py-4 px-6 text-center text-xs text-slate-500 bg-slate-950/60">
+      {/* Romer Enterprise Dark Footer */}
+      <footer className="border-t border-romer-divider py-4 px-6 text-center text-xs text-romer-text-muted bg-romer-sidebar">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
           <span>
-            © 2026 <strong>PotholeVision AI Enterprise</strong> • Roboflow Deep Learning YOLOv8/v11 Vision System
+            © 2026 <strong className="text-romer-text-main font-h3">PotholeVision AI Enterprise</strong> • Roboflow Deep Learning YOLOv8/v11 Vision System
           </span>
           <div className="flex items-center gap-4 font-mono text-[11px]">
             <span className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-400" /> System Operational
+              <span className="w-2 h-2 rounded-full bg-romer-cyan animate-pulse" /> System Operational
             </span>
             <span>Zero-Config Spatial IndexedDB</span>
           </div>
@@ -82,3 +82,4 @@ export function App() {
 }
 
 export default App;
+
