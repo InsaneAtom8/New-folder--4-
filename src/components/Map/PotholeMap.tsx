@@ -98,11 +98,11 @@ export const PotholeMap: React.FC = () => {
     });
 
     const tileUrl = tileMode === 'dark'
-      ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+      ? 'https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png'
       : 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
 
     L.tileLayer(tileUrl, {
-      attribution: '&copy; CartoDB / ESRI ArcGIS PotholeVision GIS',
+      attribution: '&copy; OpenStreetMap contributors / Stadia Maps / ESRI ArcGIS PotholeVision GIS',
       maxZoom: 19,
     }).addTo(map);
   }, [tileMode]);
