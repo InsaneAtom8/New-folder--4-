@@ -35,13 +35,13 @@ export async function getAllPotholes(): Promise<PotholeRecord[]> {
     const request = store.getAll();
 
     request.onsuccess = () => {
-      let records: PotholeRecord[] = request.result || [];
-      // If empty, seed initial municipal data
-      if (records.length === 0) {
-        records = getSeedPotholes();
-        seedDatabase(records);
+      const records: PotholeRecord[] = request.result || [];
+      // Filter out any legacy dummy/seed records
+      const cleanRecords = records.filter(r => !r.id.startsWith('seed-ph-'));
+      if (cleanRecords.length !== records.length) {
+        clearLegacySeedPotholes();
       }
-      resolve(records);
+      resolve(cleanRecords);
     };
     request.onerror = () => reject(request.error);
   });
@@ -201,50 +201,24 @@ export function exportToCSV(records: PotholeRecord[]): string {
 }
 
 /**
- * Initial municipal seed dataset for immediate visual exploring
+ * Utility function to purge legacy dummy seed records from IndexedDB
  */
-function getSeedPotholes(): PotholeRecord[] {
-  const seeds: { lat: number; lng: number; street: string; sev: SeverityLevel; status: RepairStatus }[] = [
-    // Mumbai
-    { lat: 19.1196, lng: 72.8468, street: 'Western Express Highway, Andheri (E), Mumbai', sev: 'Critical', status: 'Reported' },
-    { lat: 19.0728, lng: 72.8826, street: 'LBS Marg, Kurla West, Mumbai', sev: 'Moderate', status: 'Scheduled' },
-    { lat: 18.9220, lng: 72.8347, street: 'P D\'Mello Road, Fort, Mumbai', sev: 'Critical', status: 'In Review' },
-    { lat: 19.1760, lng: 72.9634, street: 'Ghodbunder Road, Thane, Maharashtra', sev: 'Critical', status: 'Reported' },
-    // Delhi
-    { lat: 28.6354, lng: 77.2245, street: 'Outer Ring Road, Dwarka Sector 10, New Delhi', sev: 'Moderate', status: 'Reported' },
-    { lat: 28.7041, lng: 77.1025, street: 'NH-48, Shivaji Place Junction, New Delhi', sev: 'Critical', status: 'Scheduled' },
-    { lat: 28.5665, lng: 77.3211, street: 'Noida Link Road, Mayur Vihar, Delhi', sev: 'Minor', status: 'Repaired' },
-    // Pune
-    { lat: 18.5204, lng: 73.8567, street: 'FC Road, Near Deccan Gymkhana, Pune', sev: 'Moderate', status: 'Scheduled' },
-    { lat: 18.5626, lng: 73.9140, street: 'Nagar Road, Kharadi IT Park, Pune', sev: 'Critical', status: 'In Review' },
-    // Bengaluru
-    { lat: 12.9176, lng: 77.6227, street: 'Hosur Road, Silk Board Flyover, Bengaluru', sev: 'Moderate', status: 'Reported' },
-    { lat: 12.9791, lng: 77.5913, street: 'MG Road, Near Trinity Circle, Bengaluru', sev: 'Minor', status: 'Repaired' },
-    // Chennai
-    { lat: 13.0012, lng: 80.2565, street: 'Anna Salai (Mount Road), Chennai', sev: 'Critical', status: 'Reported' },
-  ];
-
-  return seeds.map((s, idx) => ({
-    id: `seed-ph-${idx + 100}`,
-    timestamp: new Date(Date.now() - (idx * 3600000 * 4)).toISOString(),
-    videoTimeOffset: idx * 2.5,
-    latitude: s.lat,
-    longitude: s.lng,
-    streetName: s.street,
-    severity: s.sev,
-    confidence: 86 + (idx % 12),
-    estimatedAreaCm2: 240 + (idx * 60),
-    speedKmH: 38 + (idx % 15),
-    repairStatus: s.status,
-    detectionSource: 'Roboflow YOLO',
-    boundingBox: { x: 0.45, y: 0.60, width: 0.20, height: 0.15 },
-  }));
-}
-
-async function seedDatabase(records: PotholeRecord[]) {
+export async function clearLegacySeedPotholes(): Promise<void> {
   try {
-    await addPotholesBulk(records);
+    const db = await openDB();
+    const transaction = db.transaction(STORE_NAME, 'readwrite');
+    const store = transaction.objectStore(STORE_NAME);
+    const getReq = store.getAll();
+
+    getReq.onsuccess = () => {
+      const records: PotholeRecord[] = getReq.result || [];
+      records.forEach((rec) => {
+        if (rec.id && rec.id.startsWith('seed-ph-')) {
+          store.delete(rec.id);
+        }
+      });
+    };
   } catch (e) {
-    console.warn('Seed database warning:', e);
+    console.warn('Failed to clean legacy seed potholes:', e);
   }
 }

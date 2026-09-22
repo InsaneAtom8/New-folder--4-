@@ -4,7 +4,47 @@ from fastapi.middleware.cors import CORSMiddleware
 import base64
 import cv2
 import numpy as np
+import os
 from ultralytics import YOLO
+
+# Patch ultralytics AAttn block for YOLOv12 backwards compatibility if needed
+try:
+    from ultralytics.nn.modules import block
+    _orig_aattn_forward = block.AAttn.forward
+    def _patched_aattn_forward(self, x):
+        if hasattr(self, 'qk'):
+            B, _, H, W = x.shape
+            N = H * W
+            qk = self.qk(x).flatten(2).transpose(1, 2)
+            v_tensor = self.v(x).flatten(2).transpose(1, 2)
+            area = getattr(self, 'area', 1)
+            if area > 1:
+                qk = qk.reshape(B * area, N // area, self.all_head_dim * 2)
+                v_tensor = v_tensor.reshape(B * area, N // area, self.all_head_dim)
+                B, N, _ = qk.shape
+            q, k = (
+                qk.view(B, N, self.num_heads, self.head_dim * 2)
+                .permute(0, 2, 3, 1)
+                .split([self.head_dim, self.head_dim], dim=2)
+            )
+            v = v_tensor.view(B, N, self.num_heads, self.head_dim).permute(0, 2, 3, 1)
+            attn = (q * (self.head_dim ** -0.5)).transpose(-2, -1) @ k
+            attn = attn.softmax(dim=-1)
+            x = v @ attn.transpose(-2, -1)
+            x = x.permute(0, 3, 1, 2)
+            v = v.permute(0, 3, 1, 2)
+            if area > 1:
+                x = x.reshape(B // area, N * area, self.all_head_dim)
+                v = v.reshape(B // area, N * area, self.all_head_dim)
+                B, N, _ = x.shape
+            x = x.reshape(B, H, W, self.all_head_dim).permute(0, 3, 1, 2).contiguous()
+            v = v.reshape(B, H, W, self.all_head_dim).permute(0, 3, 1, 2).contiguous()
+            x = x + self.pe(v)
+            return self.proj(x)
+        return _orig_aattn_forward(self, x)
+    block.AAttn.forward = _patched_aattn_forward
+except Exception as patch_err:
+    print(f"AAttn patch note: {patch_err}")
 
 app = FastAPI()
 
@@ -17,12 +57,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-print("Loading local YOLOv8 model...")
+MODEL_PATH = os.path.abspath("pothole_yolo_dataset/best.pt")
+print(f"Loading local YOLO model from {MODEL_PATH}...")
 try:
-    model = YOLO("runs/detect/rdd2022_d40_pothole_model/high_accuracy_run-4/weights/best.pt")
+    model = YOLO(MODEL_PATH)
     print("Model loaded successfully!")
 except Exception as e:
-    print(f"Error loading model: {e}")
+    print(f"Error loading model from {MODEL_PATH}: {e}")
     model = None
 
 @app.post("/detect")

@@ -232,8 +232,8 @@ function analyzeFrameLocalCV(ctx: CanvasRenderingContext2D, width: number, heigh
   // Apply IoU Non-Maximum Suppression (NMS) to combine adjacent/overlapping grid patches
   const nmsFilteredBoxes = applyNMSBoundingBoxes(rawCandidateBoxes, 0.28);
 
-  // High-recall threshold: keep all genuine detections >= 65% confidence
-  const finalSignificantPotholes = nmsFilteredBoxes.filter(b => b.confidence >= 65);
+  // High-recall threshold: keep all genuine detections >= 40% confidence
+  const finalSignificantPotholes = nmsFilteredBoxes.filter(b => b.confidence >= 40);
 
   if (finalSignificantPotholes.length > 0) {
     const topBox = finalSignificantPotholes.reduce((prev, curr) => curr.confidence > prev.confidence ? curr : prev, finalSignificantPotholes[0]);
