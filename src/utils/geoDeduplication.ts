@@ -51,7 +51,11 @@ export function calculateIoU(box1: BoundingBox, box2: BoundingBox): number {
 }
 
 /**
- * Performs Non-Maximum Suppression (NMS) on bounding boxes based on IoU and spatial proximity
+ * Performs Non-Maximum Suppression (NMS) on bounding boxes based on IoU.
+ *
+ * Nearby boxes are not necessarily duplicates: separate potholes can be close together in a
+ * frame. Suppressing by centre distance merged unrelated detections, so only actual overlap is
+ * used here.
  */
 export function applyNMSBoundingBoxes(
   boxes: BoundingBox[],
@@ -64,33 +68,14 @@ export function applyNMSBoundingBoxes(
   const selected: BoundingBox[] = [];
 
   while (sorted.length > 0) {
-    const current = { ...sorted.shift()! };
+    const current = sorted.shift()!;
     selected.push(current);
 
     for (let i = sorted.length - 1; i >= 0; i--) {
       const candidate = sorted[i];
       const iou = calculateIoU(current, candidate);
 
-      // Check center distance proximity in relative screen coords
-      const currentCenterX = current.x + current.width / 2;
-      const currentCenterY = current.y + current.height / 2;
-      const candCenterX = candidate.x + candidate.width / 2;
-      const candCenterY = candidate.y + candidate.height / 2;
-      const centerDist = Math.hypot(currentCenterX - candCenterX, currentCenterY - candCenterY);
-
-      if (iou >= iouThreshold || centerDist < 0.18) {
-        // Expand current box to enclose both if candidate has high overlap
-        const minX = Math.min(current.x, candidate.x);
-        const minY = Math.min(current.y, candidate.y);
-        const maxX = Math.max(current.x + current.width, candidate.x + candidate.width);
-        const maxY = Math.max(current.y + current.height, candidate.y + candidate.height);
-
-        current.x = minX;
-        current.y = minY;
-        current.width = Math.min(0.55, maxX - minX);
-        current.height = Math.min(0.45, maxY - minY);
-        current.confidence = Math.max(current.confidence, candidate.confidence);
-
+      if (iou >= iouThreshold) {
         sorted.splice(i, 1);
       }
     }
@@ -100,8 +85,9 @@ export function applyNMSBoundingBoxes(
 }
 
 /**
- * Deduplicates pothole records by clustering those within radiusMeters (default 15m)
- * Merges duplicates into a single record with highest confidence & best snapshot.
+ * Deduplicates legacy records from different analysis runs by geographic proximity.
+ * Same-run records are already visually tracked and must stay separate even though they share
+ * camera GPS coordinates.
  */
 export function deduplicatePotholeRecords(
   records: PotholeRecord[],
@@ -136,11 +122,9 @@ export function deduplicatePotholeRecords(
         target.longitude
       );
 
-      // Also check video time offset if available
-      const timeDiff = Math.abs(main.videoTimeOffset - target.videoTimeOffset);
-      const isTimeMatch = main.videoTimeOffset > 0 && target.videoTimeOffset > 0 && timeDiff < 8;
+      const belongsToSameRun = Boolean(main.runId && target.runId && main.runId === target.runId);
 
-      if (distMeters <= radiusMeters || isTimeMatch) {
+      if (!belongsToSameRun && distMeters <= radiusMeters) {
         cluster.push(target);
         visited.add(target.id);
       }

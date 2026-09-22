@@ -1,15 +1,14 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { usePotholes } from '../../context/PotholeContext';
-import { GPSPoint, PotholeRecord, ProcessingLog } from '../../types/pothole';
+import { BoundingBox, GPSPoint, PotholeRecord, ProcessingLog } from '../../types/pothole';
 import { getInterpolatedGPS } from '../../utils/gpsInterpolator';
-import { generateSyntheticTrack } from '../../utils/mockGpsGenerator';
+import { generateTrackFromBaseCoords } from '../../utils/mockGpsGenerator';
 import { analyzeFrame } from '../../services/potholeDetector';
-import { calculateHaversineDistance, deduplicatePotholeRecords } from '../../utils/geoDeduplication';
-import confetti from 'canvas-confetti';
+import { findBestTrackMatch, PotholeTrack } from '../../services/potholeTracker';
+import { getStreetNameFromCoords } from '../../utils/reverseGeocode';
 import {
   Play,
   Pause,
-  RotateCcw,
   Cpu,
   MapPin,
   Activity,
@@ -26,17 +25,31 @@ interface DetectionCanvasProps {
   onFinished: () => void;
 }
 
+interface FrameJob {
+  id: number;
+  runVersion: number;
+  videoTimeSec: number;
+  gps: GPSPoint;
+  snapshotUrl: string;
+  frameWidth: number;
+  frameHeight: number;
+}
+
 export const DetectionCanvas: React.FC<DetectionCanvasProps> = ({
   videoFile,
   gpsPoints,
-  presetId,
   onFinished
 }) => {
   const { aiConfig, addPotholesBulk, setActiveTab } = usePotholes();
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animFrameIdRef = useRef<number | null>(null);
+  const tracksRef = useRef<PotholeTrack[]>([]);
+  const frameQueueRef = useRef<FrameJob[]>([]);
+  const processingPromiseRef = useRef<Promise<void> | null>(null);
+  const runVersionRef = useRef(0);
+  const nextFrameIdRef = useRef(0);
+  const hasFinalizedRef = useRef(false);
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -47,7 +60,7 @@ export const DetectionCanvas: React.FC<DetectionCanvasProps> = ({
   const [detectedRecords, setDetectedRecords] = useState<PotholeRecord[]>([]);
   const detectedRecordsRef = useRef<PotholeRecord[]>([]);
   const [currentGps, setCurrentGps] = useState<GPSPoint | null>(null);
-  const [activeBoxes, setActiveBoxes] = useState<any[]>([]);
+  const [activeBoxes, setActiveBoxes] = useState<BoundingBox[]>([]);
 
   const [isCompleted, setIsCompleted] = useState(false);
   const lastSampleTimeRef = useRef<number>(0);
@@ -58,17 +71,25 @@ export const DetectionCanvas: React.FC<DetectionCanvasProps> = ({
   const effectiveTrackRef = useRef<GPSPoint[]>([]);
 
   useEffect(() => {
+    const runVersion = runVersionRef.current + 1;
+    runVersionRef.current = runVersion;
     detectedRecordsRef.current = [];
+    tracksRef.current = [];
+    frameQueueRef.current = [];
     setDetectedRecords([]);
+    setActiveBoxes([]);
+    setIsCompleted(false);
     initialFrameScannedRef.current = false;
     lastSampleTimeRef.current = 0;
+    hasFinalizedRef.current = false;
     const videoUrl = URL.createObjectURL(videoFile);
     if (videoRef.current) {
       videoRef.current.src = videoUrl;
     }
     return () => {
+      if (runVersionRef.current === runVersion) runVersionRef.current += 1;
+      frameQueueRef.current = [];
       URL.revokeObjectURL(videoUrl);
-      if (animFrameIdRef.current) cancelAnimationFrame(animFrameIdRef.current);
     };
   }, [videoFile]);
 
@@ -90,15 +111,16 @@ export const DetectionCanvas: React.FC<DetectionCanvasProps> = ({
     // Prepare GPS track
     let track = gpsPoints;
     if (!track || track.length === 0) {
-      track = generateSyntheticTrack(dur, presetId);
-      addLog('info', `Synthetic GPS track generated using preset route`);
+      track = generateTrackFromBaseCoords(dur);
+      addLog('info', `Using GPS track relative to current position`);
     } else {
       addLog('info', `Loaded ${track.length} telemetry GPS points from log file`);
     }
     effectiveTrackRef.current = track;
     setEffectiveTrack(track);
 
-    addLog('ai', `Initialized AI Engine (${aiConfig.activeModelPreset === 'rdd2022-custom' ? 'RDD2022 Custom D40' : 'Roboflow YOLO'})`);
+    const modelName = aiConfig.activeModelPreset === 'rdd2022-custom' ? 'YOLOv12 PyResearch' : 'Roboflow YOLO';
+    addLog('ai', `Initialized AI Engine (${modelName})`);
 
     // Auto start
     playVideo();
@@ -108,7 +130,7 @@ export const DetectionCanvas: React.FC<DetectionCanvasProps> = ({
     if (initialFrameScannedRef.current || !videoRef.current || !canvasRef.current || effectiveTrackRef.current.length === 0) return;
     initialFrameScannedRef.current = true;
     const initialGps = getInterpolatedGPS(effectiveTrackRef.current, 0);
-    processFrame(0, initialGps);
+    enqueueFrame(0, initialGps);
   };
 
   const playVideo = () => {
@@ -126,7 +148,7 @@ export const DetectionCanvas: React.FC<DetectionCanvasProps> = ({
     }
   };
 
-  const handleTimeUpdate = async () => {
+  const handleTimeUpdate = () => {
     if (!videoRef.current || !canvasRef.current) return;
 
     const t = videoRef.current.currentTime;
@@ -142,81 +164,146 @@ export const DetectionCanvas: React.FC<DetectionCanvasProps> = ({
     if (!initialFrameScannedRef.current) {
       initialFrameScannedRef.current = true;
       lastSampleTimeRef.current = t;
-      await processFrame(t, gps);
+      enqueueFrame(t, gps);
     } else if (t - lastSampleTimeRef.current >= aiConfig.sampleRateSeconds) {
       lastSampleTimeRef.current = t;
-      await processFrame(t, gps);
+      enqueueFrame(t, gps);
     }
   };
 
-  const processFrame = async (videoTimeSec: number, gps: GPSPoint) => {
+  const enqueueFrame = (videoTimeSec: number, gps: GPSPoint) => {
     if (!canvasRef.current || !videoRef.current) return;
 
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx || video.videoWidth === 0 || video.videoHeight === 0) return;
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    frameQueueRef.current.push({
+      id: nextFrameIdRef.current++,
+      runVersion: runVersionRef.current,
+      videoTimeSec,
+      gps,
+      snapshotUrl: canvas.toDataURL('image/jpeg', 0.85),
+      frameWidth: canvas.width,
+      frameHeight: canvas.height,
+    });
+    void drainFrameQueue();
+  };
+
+  const drainFrameQueue = (): Promise<void> => {
+    if (processingPromiseRef.current) return processingPromiseRef.current;
+
+    const processor = (async () => {
+      while (frameQueueRef.current.length > 0) {
+        const job = frameQueueRef.current.shift()!;
+        await processFrame(job);
+      }
+    })();
+
+    processingPromiseRef.current = processor;
+    void processor.finally(() => {
+      if (processingPromiseRef.current === processor) {
+        processingPromiseRef.current = null;
+        if (frameQueueRef.current.length > 0) void drainFrameQueue();
+      }
+    });
+    return processor;
+  };
+
+  const enrichRecordLocation = async (trackId: string, gps: GPSPoint, runVersion: number) => {
+    const streetName = await getStreetNameFromCoords(gps.latitude, gps.longitude);
+    if (runVersion !== runVersionRef.current) return;
+
+    const track = tracksRef.current.find(item => item.record.trackId === trackId);
+    if (!track) return;
+
+    track.record = { ...track.record, streetName };
+    detectedRecordsRef.current = tracksRef.current.map(item => item.record);
+    setDetectedRecords([...detectedRecordsRef.current]);
+  };
+
+  const processFrame = async (job: FrameJob) => {
+    if (job.runVersion !== runVersionRef.current) return;
+
     try {
-      const res = await analyzeFrame(canvasRef.current, videoRef.current, aiConfig);
+      const res = await analyzeFrame(job.snapshotUrl, aiConfig);
+      if (job.runVersion !== runVersionRef.current) return;
 
       if (res.detected && res.boundingBoxes.length > 0) {
-        // Display active bounding box overlays for the current frame
         setActiveBoxes(res.boundingBoxes);
 
-        const snapshotUrl = canvasRef.current.toDataURL('image/jpeg', 0.85);
-
-        // Process each detected box and match against physical pothole spatial-temporal tracks
-        res.boundingBoxes.forEach((box, idx) => {
-          const area = Math.round(box.width * canvasRef.current!.width * box.height * canvasRef.current!.height * 0.35);
-
-          const currentList = detectedRecordsRef.current;
-          // Match against existing records within 8m spatial radius OR 2.5s time window with position alignment
-          const existingIdx = currentList.findIndex((existing) => {
-            const timeDiff = Math.abs(existing.videoTimeOffset - videoTimeSec);
-            const distMeters = calculateHaversineDistance(
-              existing.latitude,
-              existing.longitude,
-              gps.latitude,
-              gps.longitude
-            );
-            const boxDiffX = Math.abs(existing.boundingBox.x - box.x);
-
-            // Pothole remains the SAME physical hazard as car passes over it (within 8m ground radius or 2.5s time window with tight lane alignment)
-            return distMeters <= 8 || (timeDiff < 2.5 && boxDiffX < 0.22);
-          });
+        for (let idx = 0; idx < res.boundingBoxes.length; idx++) {
+          const box = res.boundingBoxes[idx];
+          const area = Math.round(box.width * job.frameWidth * box.height * job.frameHeight * 0.35);
+          const existingIdx = findBestTrackMatch(
+            tracksRef.current,
+            box,
+            job.videoTimeSec,
+            job.id
+          );
 
           if (existingIdx >= 0) {
-            // Update existing physical pothole record with best confidence snapshot
-            const old = currentList[existingIdx];
-            currentList[existingIdx] = {
+            const track = tracksRef.current[existingIdx];
+            const old = track.record;
+            const shouldUseNewEvidence = box.confidence >= old.confidence;
+            const updatedRecord: PotholeRecord = {
               ...old,
               confidence: Math.max(old.confidence, box.confidence),
               estimatedAreaCm2: Math.max(old.estimatedAreaCm2, area),
-              snapshotUrl: box.confidence > old.confidence ? snapshotUrl : old.snapshotUrl,
+              observationCount: (old.observationCount || 1) + 1,
+              ...(shouldUseNewEvidence
+                ? { snapshotUrl: job.snapshotUrl, boundingBox: box }
+                : {}),
             };
+            track.record = updatedRecord;
+            track.lastBoundingBox = box;
+            track.lastSeenVideoTime = job.videoTimeSec;
+            track.lastFrameId = job.id;
+            detectedRecordsRef.current = tracksRef.current.map(item => item.record);
+            setDetectedRecords([...detectedRecordsRef.current]);
           } else {
-            // Register 1 clean new physical pothole hazard entry
+            const trackId = `track-${job.id}-${idx}`;
+
             const newRecord: PotholeRecord = {
               id: `ph-det-${Date.now()}-${idx}-${Math.floor(Math.random() * 1000)}`,
+              runId: `run-${job.runVersion}`,
+              trackId,
+              observationCount: 1,
               timestamp: new Date().toISOString(),
-              videoTimeOffset: Number(videoTimeSec.toFixed(2)),
-              latitude: gps.latitude,
-              longitude: gps.longitude,
-              streetName: `Road Segment #${Math.floor(gps.latitude * 1000 % 800)}`,
+              videoTimeOffset: Number(job.videoTimeSec.toFixed(2)),
+              latitude: job.gps.latitude,
+              longitude: job.gps.longitude,
+              streetName: `Loc: ${job.gps.latitude.toFixed(4)}, ${job.gps.longitude.toFixed(4)}`,
               severity: box.width > 0.24 || box.height > 0.20 ? 'Critical' : 'Moderate',
               confidence: box.confidence,
               estimatedAreaCm2: Math.max(220, area),
-              speedKmH: gps.speed || 40,
+              speedKmH: job.gps.speed || 40,
               repairStatus: 'Reported',
               detectionSource: res.source,
-              snapshotUrl,
+              snapshotUrl: job.snapshotUrl,
               boundingBox: box
             };
 
-            currentList.push(newRecord);
-            setDetectedRecords([...currentList]);
+            tracksRef.current.push({
+              record: newRecord,
+              lastBoundingBox: box,
+              lastSeenVideoTime: job.videoTimeSec,
+              lastFrameId: job.id,
+            });
+            detectedRecordsRef.current = tracksRef.current.map(item => item.record);
+            setDetectedRecords([...detectedRecordsRef.current]);
+            void enrichRecordLocation(trackId, job.gps, job.runVersion);
             addLog(
               'success',
-              `New Physical Pothole #${currentList.length} Registered (${box.confidence}% Conf) at [${newRecord.latitude.toFixed(5)}, ${newRecord.longitude.toFixed(5)}]`
+              `New Pothole #${tracksRef.current.length} Registered (${box.confidence}% Conf) at ${newRecord.streetName}`
             );
           }
-        });
+        }
       } else {
         setActiveBoxes([]);
       }
@@ -227,27 +314,18 @@ export const DetectionCanvas: React.FC<DetectionCanvasProps> = ({
 
   const handleEnded = async () => {
     setIsPlaying(false);
-    setIsCompleted(true);
-    const rawRecords = detectedRecordsRef.current;
+    await drainFrameQueue();
+    if (hasFinalizedRef.current) return;
+    hasFinalizedRef.current = true;
 
-    // Perform post-processing spatial deduplication pass (15m radius)
-    const finalRecords = deduplicatePotholeRecords(rawRecords, 15);
-    detectedRecordsRef.current = finalRecords;
-    setDetectedRecords(finalRecords);
+    const finalRecords = detectedRecordsRef.current;
 
-    addLog('success', `Video Analysis Completed! Consolidated ${rawRecords.length} raw observations into ${finalRecords.length} unique physical potholes.`);
+    addLog('success', `Video Analysis Completed! Preserved ${finalRecords.length} independently tracked potholes.`);
 
-    // Commit to IndexedDB Database
     if (finalRecords.length > 0) {
       await addPotholesBulk(finalRecords);
     }
-
-    // Trigger celebratory fireworks
-    confetti({
-      particleCount: 100,
-      spread: 70,
-      origin: { y: 0.6 }
-    });
+    setIsCompleted(true);
   };
 
   const handleRedirectToMap = () => {
@@ -385,7 +463,9 @@ export const DetectionCanvas: React.FC<DetectionCanvasProps> = ({
             <span className="text-xs font-bold text-slate-200 flex items-center gap-2">
               <Terminal className="w-4 h-4 text-cyan-400" /> Live AI Telemetry Stream
             </span>
-            <span className="text-[10px] font-mono text-slate-500 uppercase">YOLOv8 Active</span>
+            <span className="text-[10px] font-mono text-cyan-400 uppercase">
+              {aiConfig.activeModelPreset === 'rdd2022-custom' ? 'YOLOv12 PyResearch' : 'Roboflow YOLO'} Active
+            </span>
           </div>
 
           {/* Log Items Scroll Container */}
@@ -415,8 +495,8 @@ export const DetectionCanvas: React.FC<DetectionCanvasProps> = ({
           </div>
 
           <div className="pt-2 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
-            <span>Model: <strong className="text-cyan-400">Roboflow YOLO</strong></span>
-            <span>Target: <strong className="text-emerald-400">Pothole v3</strong></span>
+            <span>Model: <strong className="text-cyan-400">{aiConfig.activeModelPreset === 'rdd2022-custom' ? 'YOLOv12 PyResearch' : 'Roboflow YOLO'}</strong></span>
+            <span>Target: <strong className="text-emerald-400">Pothole Hazard</strong></span>
           </div>
         </div>
 

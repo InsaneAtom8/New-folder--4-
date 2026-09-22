@@ -187,7 +187,7 @@ export const AnalyticsDashboard: React.FC = () => {
             <h3 className="text-3xl font-extrabold font-mono text-cyan-400">{avgConfidence}%</h3>
             <p className="text-xs text-slate-400 mt-1">Average Model Confidence</p>
           </div>
-          <span className="text-[11px] font-mono text-emerald-400 font-semibold">Roboflow Model v3</span>
+          <span className="text-[11px] font-mono text-emerald-400 font-semibold">YOLOv12 PyResearch AI</span>
         </div>
 
       </div>

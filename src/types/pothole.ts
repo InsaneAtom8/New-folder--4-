@@ -21,6 +21,12 @@ export interface GPSPoint {
 
 export interface PotholeRecord {
   id: string;
+  /** Identifies one video-analysis run so same-run records are never spatially merged. */
+  runId?: string;
+  /** Stable visual track ID within a video-analysis run. */
+  trackId?: string;
+  /** Number of sampled frames that contributed evidence for this record. */
+  observationCount?: number;
   timestamp: string;          // ISO string
   videoTimeOffset: number;    // Seconds into video
   latitude: number;
@@ -31,14 +37,10 @@ export interface PotholeRecord {
   estimatedAreaCm2: number;   // Estimated physical surface area in cm²
   speedKmH: number;           // Vehicle speed at moment of detection
   repairStatus: RepairStatus;
-  detectionSource: 'Roboflow YOLO' | 'RDD2022 Custom D40' | 'Local Computer Vision';
+  detectionSource: 'Roboflow YOLO' | 'YOLOv12 PyResearch' | 'RDD2022 Custom D40' | 'Local Computer Vision';
   snapshotUrl?: string;       // Base64 thumbnail of video frame with bounding box
-  boundingBox: {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-  };
+  /** Normalized top-left x/y and normalized width/height for the stored evidence frame. */
+  boundingBox: Pick<BoundingBox, 'x' | 'y' | 'width' | 'height'>;
 }
 
 export interface AIConfig {

@@ -8,7 +8,7 @@ export interface DetectionResult {
   severity: SeverityLevel;
   confidence: number;
   estimatedAreaCm2: number;
-  source: 'Roboflow YOLO' | 'RDD2022 Custom D40' | 'Local Computer Vision';
+  source: 'Roboflow YOLO' | 'YOLOv12 PyResearch';
 }
 
 interface LocalDetectorResponse {
@@ -30,22 +30,9 @@ interface LocalDetectorResponse {
  * Analyzes video frame canvas and executes AI object detection pipeline
  */
 export async function analyzeFrame(
-  canvas: HTMLCanvasElement,
-  videoElement: HTMLVideoElement,
+  dataUrl: string,
   aiConfig: AIConfig
 ): Promise<DetectionResult> {
-  const ctx = canvas.getContext('2d');
-  if (!ctx) {
-    return createEmptyResult();
-  }
-
-  // Draw current video frame onto canvas
-  canvas.width = videoElement.videoWidth || 640;
-  canvas.height = videoElement.videoHeight || 480;
-  ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
-
-  const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-
   if (aiConfig.activeModelPreset === 'rdd2022-custom') {
     try {
       const boxes = await detectLocalModel(dataUrl);
@@ -55,18 +42,17 @@ export async function analyzeFrame(
       if (nmsFiltered.length > 0) {
         const topBox = nmsFiltered[0];
         const severity = calculateSeverity(topBox.width, topBox.height, topBox.confidence);
-        const area = Math.round(topBox.width * canvas.width * topBox.height * canvas.height * 0.25);
         return {
           detected: true,
           boundingBoxes: nmsFiltered,
           severity,
           confidence: topBox.confidence,
-          estimatedAreaCm2: Math.max(120, area),
-          source: 'RDD2022 Custom D40',
+          estimatedAreaCm2: 0,
+          source: 'YOLOv12 PyResearch',
         };
       }
     } catch (err) {
-      console.warn('Local YOLO detector unavailable; using Computer Vision fallback:', err);
+      console.warn('Local YOLOv12 backend unavailable:', err);
     }
   }
 
@@ -82,25 +68,18 @@ export async function analyzeFrame(
       if (nmsFiltered.length > 0) {
         const topBox = nmsFiltered[0];
         const severity = calculateSeverity(topBox.width, topBox.height, topBox.confidence);
-        const area = Math.round(topBox.width * canvas.width * topBox.height * canvas.height * 0.25);
-
         return {
           detected: true,
           boundingBoxes: nmsFiltered,
           severity,
           confidence: topBox.confidence,
-          estimatedAreaCm2: Math.max(120, area),
+          estimatedAreaCm2: 0,
           source: 'Roboflow YOLO',
         };
       }
     } catch (err) {
-      // Fallback to local CV if API fails or quota exceeded
+      console.warn('Roboflow API error:', err);
     }
-  }
-
-  // Local Computer Vision Spatial & Contrast Analyzer Fallback
-  if (aiConfig.useLocalFallback) {
-    return analyzeFrameLocalCV(ctx, canvas.width, canvas.height);
   }
 
   return createEmptyResult();
@@ -246,7 +225,7 @@ function analyzeFrameLocalCV(ctx: CanvasRenderingContext2D, width: number, heigh
       severity,
       confidence: topBox.confidence,
       estimatedAreaCm2: Math.max(220, area),
-      source: 'RDD2022 Custom D40',
+      source: 'YOLOv12 PyResearch',
     };
   }
 
@@ -267,6 +246,6 @@ function createEmptyResult(): DetectionResult {
     severity: 'Minor',
     confidence: 0,
     estimatedAreaCm2: 0,
-    source: 'Local Computer Vision',
+    source: 'YOLOv12 PyResearch',
   };
 }

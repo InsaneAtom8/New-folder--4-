@@ -49,7 +49,7 @@ interface PotholeContextType {
 const DEFAULT_AI_CONFIG: AIConfig = {
   apiKey: import.meta.env.VITE_ROBOFLOW_API_KEY || 'pwbfBnUCVvZQlktfIAJc',
   modelId: import.meta.env.VITE_ROBOFLOW_MODEL || 'pothole-detection-system/3',
-  confidenceThreshold: 0.40, // 40% confidence threshold
+  confidenceThreshold: 0.30, // Calibrated starting point; tune against labelled footage.
   sampleRateSeconds: 0.3,   // Sample 3.3 frames per second for accurate pothole video scanning
   useLocalFallback: true,
   activeModelPreset: 'rdd2022-custom',
