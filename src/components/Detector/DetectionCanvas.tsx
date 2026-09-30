@@ -337,43 +337,43 @@ export const DetectionCanvas: React.FC<DetectionCanvasProps> = ({
     <div className="max-w-6xl mx-auto space-y-5 animate-in fade-in duration-200">
 
       {/* Header Bar */}
-      <div className="flex items-center justify-between bg-romer-card border border-romer-divider p-4 rounded-xl inner-glow">
+      <div className="flex items-center justify-between bg-[#F2F2F2] border border-black/10 p-4 rounded-2xl shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-romer-cyan/10 text-romer-cyan rounded-xl border border-romer-cyan/20">
+          <div className="p-2.5 bg-[#000000] text-[#FFFFFF] rounded-xl">
             <Cpu className="w-5 h-5 animate-spin" />
           </div>
           <div>
-            <h3 className="text-base font-h3 font-bold text-romer-text-main tracking-wide">
+            <h3 className="text-lg font-medium text-[#000000] tracking-tight">
               Real-Time AI Vision Scanner HUD
             </h3>
-            <p className="text-xs text-romer-text-muted">
-              Roboflow Deep Learning Frame Analysis & Timestamp Telemetry Correlation
+            <p className="text-xs text-[#222222]">
+              Deep Learning Frame Analysis & Telemetry Correlation
             </p>
           </div>
         </div>
 
         {/* Status Pills */}
         <div className="flex items-center gap-3 text-xs font-mono">
-          <div className="bg-[#070708] px-3 py-1.5 rounded-xl border border-romer-divider flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-romer-cyan animate-ping" />
-            <span className="text-romer-text-main">FPS: <strong className="text-romer-cyan">29.9</strong></span>
+          <div className="bg-[#FFFFFF] px-3 py-1.5 rounded-full border border-black/10 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-[#000000] animate-ping" />
+            <span className="text-[#000000]">FPS: <strong className="font-bold">29.9</strong></span>
           </div>
-          <div className="bg-[#070708] px-3 py-1.5 rounded-xl border border-romer-divider flex items-center gap-2">
-            <Activity className="w-3.5 h-3.5 text-romer-amber" />
-            <span className="text-romer-text-main">Detected: <strong className="text-romer-amber">{detectedRecords.length}</strong></span>
+          <div className="bg-[#FFFFFF] px-3 py-1.5 rounded-full border border-black/10 flex items-center gap-2">
+            <Activity className="w-3.5 h-3.5 text-[#000000]" />
+            <span className="text-[#000000]">Detected: <strong className="font-bold">{detectedRecords.length}</strong></span>
           </div>
         </div>
       </div>
 
-      {/* Main Grid: Video Player + Canvas HUD & Right Log Stream */}
+      {/* Main Grid: Video Viewport + Log Terminal */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
 
-        {/* Left 2 Cols: Canvas Video Viewport */}
+        {/* Left 2 Cols: Viewport */}
         <div className="lg:col-span-2 space-y-3">
 
-          <div className="relative aspect-video bg-[#070708] rounded-xl overflow-hidden border border-romer-divider shadow-2xl group">
+          <div className="relative aspect-video bg-[#000000] rounded-2xl overflow-hidden border border-black/10 shadow-lg group">
 
-            {/* HTML5 Video Element (Hidden rendering source) */}
+            {/* HTML5 Video Element */}
             <video
               ref={videoRef}
               onLoadedMetadata={handleLoadedMetadata}
@@ -385,7 +385,7 @@ export const DetectionCanvas: React.FC<DetectionCanvasProps> = ({
               className="w-full h-full object-cover"
             />
 
-            {/* Canvas Overlay for HUD, Laser Scan Lines & Bounding Boxes */}
+            {/* Canvas Overlay */}
             <canvas
               ref={canvasRef}
               className="absolute inset-0 w-full h-full pointer-events-none"
@@ -395,7 +395,7 @@ export const DetectionCanvas: React.FC<DetectionCanvasProps> = ({
             {activeBoxes.map((box, idx) => (
               <div
                 key={idx}
-                className="absolute border-2 border-romer-cyan bg-romer-cyan/15 rounded shadow-lg shadow-romer-cyan/40 transition-all duration-75 animate-pulse"
+                className="absolute border-2 border-[#FFFFFF] bg-white/20 rounded shadow-lg transition-all duration-75 animate-pulse"
                 style={{
                   left: `${box.x * 100}%`,
                   top: `${box.y * 100}%`,
@@ -403,7 +403,7 @@ export const DetectionCanvas: React.FC<DetectionCanvasProps> = ({
                   height: `${box.height * 100}%`,
                 }}
               >
-                <div className="absolute -top-6 left-0 bg-romer-cyan text-[#070708] font-mono text-[10px] font-extrabold px-2 py-0.5 rounded shadow flex items-center gap-1">
+                <div className="absolute -top-6 left-0 bg-[#000000] text-[#FFFFFF] font-mono text-[10px] font-bold px-2 py-0.5 rounded shadow flex items-center gap-1">
                   <span>POTHOLE {box.confidence}%</span>
                 </div>
               </div>
@@ -411,42 +411,42 @@ export const DetectionCanvas: React.FC<DetectionCanvasProps> = ({
 
             {/* Laser Line Scanning Animation */}
             {isPlaying && (
-              <div className="absolute left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-romer-cyan to-transparent shadow-[0_0_15px_#50d8e9] animate-scan-line pointer-events-none" />
+              <div className="absolute left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-[#FFFFFF] to-transparent shadow-[0_0_15px_#ffffff] animate-scan-line pointer-events-none" />
             )}
 
             {/* Top Telemetry HUD Overlay */}
             {currentGps && (
               <div className="absolute top-3 left-3 right-3 flex items-center justify-between pointer-events-none">
-                <div className="bg-[#070708]/85 backdrop-blur-md px-3 py-1.5 rounded-xl border border-romer-divider text-[11px] font-mono text-romer-cyan flex items-center gap-2">
-                  <MapPin className="w-3.5 h-3.5 text-romer-cyan" />
+                <div className="bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full text-[11px] font-mono text-[#FFFFFF] flex items-center gap-2 border border-white/20">
+                  <MapPin className="w-3.5 h-3.5" />
                   <span>LAT: <strong>{currentGps.latitude}</strong></span>
                   <span>LNG: <strong>{currentGps.longitude}</strong></span>
                 </div>
-                <div className="bg-[#070708]/85 backdrop-blur-md px-3 py-1.5 rounded-xl border border-romer-divider text-[11px] font-mono text-romer-amber flex items-center gap-2">
-                  <Gauge className="w-3.5 h-3.5 text-romer-amber" />
+                <div className="bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full text-[11px] font-mono text-[#FFFFFF] flex items-center gap-2 border border-white/20">
+                  <Gauge className="w-3.5 h-3.5" />
                   <span>{currentGps.speed} KM/H</span>
                 </div>
               </div>
             )}
 
             {/* Controls Overlay Bar */}
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-[#070708] via-[#070708]/80 to-transparent p-4 flex items-center justify-between gap-4">
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black/80 to-transparent p-4 flex items-center justify-between gap-4">
               <button
                 onClick={() => (isPlaying ? pauseVideo() : playVideo())}
-                className="p-2.5 bg-romer-cyan text-[#070708] hover:bg-romer-cyan/90 rounded-xl font-bold transition-all shadow-lg shadow-romer-cyan/20"
+                className="p-2.5 bg-[#FFFFFF] text-[#000000] hover:bg-[#F2F2F2] rounded-xl font-bold transition-all shadow-md"
               >
                 {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
               </button>
 
               {/* Progress Slider */}
               <div className="flex-1 space-y-1">
-                <div className="flex justify-between text-[11px] font-mono text-romer-text-muted">
+                <div className="flex justify-between text-[11px] font-mono text-[#FFFFFF]/80">
                   <span>{currentTime.toFixed(1)}s</span>
                   <span>{duration.toFixed(1)}s</span>
                 </div>
-                <div className="h-2 bg-romer-sidebar rounded-full overflow-hidden border border-romer-divider">
+                <div className="h-2 bg-white/20 rounded-full overflow-hidden border border-white/10">
                   <div
-                    className="h-full bg-romer-primary transition-all duration-100"
+                    className="h-full bg-[#FFFFFF] transition-all duration-100"
                     style={{ width: `${progress}%` }}
                   />
                 </div>
@@ -457,36 +457,29 @@ export const DetectionCanvas: React.FC<DetectionCanvasProps> = ({
 
         </div>
 
-        {/* Right 1 Col: Live AI Processing Log Terminal */}
-        <div className="bg-romer-card border border-romer-divider rounded-xl p-4 flex flex-col justify-between h-[420px] inner-glow">
-          <div className="flex items-center justify-between pb-3 border-b border-romer-divider">
-            <span className="text-xs font-bold text-romer-text-main flex items-center gap-2">
-              <Terminal className="w-4 h-4 text-romer-cyan" /> Live AI Telemetry Stream
+        {/* Right 1 Col: Live AI Log Terminal */}
+        <div className="bg-[#F2F2F2] border border-black/10 rounded-2xl p-4 flex flex-col justify-between h-[420px]">
+          <div className="flex items-center justify-between pb-3 border-b border-black/10">
+            <span className="text-xs font-medium text-[#000000] flex items-center gap-2">
+              <Terminal className="w-4 h-4 text-[#000000]" /> Live Telemetry Log
             </span>
-            <span className="text-[10px] font-mono text-romer-cyan uppercase">
-              {aiConfig.activeModelPreset === 'rdd2022-custom' ? 'YOLOv12 PyResearch' : 'Roboflow YOLO'} Active
+            <span className="text-[10px] font-mono text-[#000000] uppercase font-bold">
+              {aiConfig.activeModelPreset === 'rdd2022-custom' ? 'YOLOv12' : 'Roboflow'} Active
             </span>
           </div>
 
           {/* Log Items Scroll Container */}
-          <div className="flex-1 overflow-y-auto my-3 space-y-2 pr-1 font-mono text-[11px] scrollbar-thin">
+          <div className="flex-1 overflow-y-auto my-3 space-y-2 pr-1 font-mono text-[11px]">
             {logs.length === 0 ? (
-              <div className="text-romer-text-muted text-center py-10">Waiting for video stream...</div>
+              <div className="text-[#222222] text-center py-10">Waiting for video stream...</div>
             ) : (
               logs.map((log) => {
-                const colorMap = {
-                  info: 'text-romer-text-muted border-romer-divider bg-[#070708]',
-                  success: 'text-emerald-400 border-emerald-500/20 bg-emerald-950/20',
-                  warning: 'text-romer-amber border-romer-amber/20 bg-romer-amber/10',
-                  error: 'text-rose-400 border-rose-500/20 bg-rose-950/20',
-                  ai: 'text-romer-cyan border-romer-cyan/20 bg-romer-cyan/10',
-                };
                 return (
                   <div
                     key={log.id}
-                    className={`p-2 rounded-lg border text-[11px] leading-snug ${colorMap[log.type]}`}
+                    className="p-2 rounded-lg border border-black/10 bg-[#FFFFFF] text-[#000000] text-[11px] leading-snug"
                   >
-                    <span className="text-romer-text-muted mr-2">[{log.timestamp}]</span>
+                    <span className="text-[#222222] mr-2">[{log.timestamp}]</span>
                     <span>{log.message}</span>
                   </div>
                 );
@@ -494,9 +487,9 @@ export const DetectionCanvas: React.FC<DetectionCanvasProps> = ({
             )}
           </div>
 
-          <div className="pt-2 border-t border-romer-divider flex items-center justify-between text-xs text-romer-text-muted font-mono">
-            <span>Model: <strong className="text-romer-cyan">{aiConfig.activeModelPreset === 'rdd2022-custom' ? 'YOLOv12 PyResearch' : 'Roboflow YOLO'}</strong></span>
-            <span>Target: <strong className="text-emerald-400">Pothole Hazard</strong></span>
+          <div className="pt-2 border-t border-black/10 flex items-center justify-between text-xs text-[#222222] font-mono">
+            <span>Engine: <strong className="text-[#000000]">{aiConfig.activeModelPreset === 'rdd2022-custom' ? 'YOLOv12 Local' : 'Roboflow Cloud'}</strong></span>
+            <span>Target: <strong className="text-[#000000]">Pothole Hazard</strong></span>
           </div>
         </div>
 
@@ -504,23 +497,23 @@ export const DetectionCanvas: React.FC<DetectionCanvasProps> = ({
 
       {/* Processing Completed Dialog Modal */}
       {isCompleted && (
-        <div className="bg-romer-card border border-emerald-500/40 rounded-xl p-6 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-4 animate-in zoom-in duration-300 inner-glow">
+        <div className="bg-[#F2F2F2] border border-black/20 rounded-2xl p-6 shadow-xl flex flex-col md:flex-row items-center justify-between gap-4 animate-in zoom-in duration-300">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center shrink-0">
-              <CheckCircle2 className="w-7 h-7" />
+            <div className="w-12 h-12 rounded-full bg-[#000000] text-[#FFFFFF] flex items-center justify-center shrink-0">
+              <CheckCircle2 className="w-6 h-6" />
             </div>
             <div>
-              <h3 className="text-lg font-h3 font-bold text-romer-text-main">Detection Run Successfully Completed!</h3>
-              <p className="text-xs text-romer-text-muted">
+              <h3 className="text-lg font-normal text-[#000000]">Detection Run Completed!</h3>
+              <p className="text-xs text-[#222222]">
                 Mapped <strong>{detectedRecords.length}</strong> new pothole hazards to the spatial database.
               </p>
             </div>
           </div>
           <button
             onClick={handleRedirectToMap}
-            className="px-6 py-3 bg-romer-primary hover:bg-romer-primary-hover text-white font-bold rounded-xl shadow-lg shadow-romer-primary/25 flex items-center gap-2 hover:scale-[1.02] transition-transform font-h3"
+            className="px-6 py-3 bg-[#000000] hover:bg-[#222222] text-[#FFFFFF] font-medium rounded-full shadow-md flex items-center gap-2 transition-all"
           >
-            <span>Proceed to GIS Map View</span>
+            <span>Proceed to GIS Map</span>
             <ArrowRight className="w-4 h-4" />
           </button>
         </div>

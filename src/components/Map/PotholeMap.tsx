@@ -98,7 +98,7 @@ export const PotholeMap: React.FC = () => {
     });
 
     const tileUrl = tileMode === 'dark'
-      ? 'https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png'
+      ? 'https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png'
       : 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
 
     L.tileLayer(tileUrl, {
@@ -147,11 +147,11 @@ export const PotholeMap: React.FC = () => {
   // Create SVG Marker Icon with severity glow
   function createCustomMarkerIcon(severity: SeverityLevel, status: RepairStatus) {
     const colorMap = {
-      Critical: '#ffb4ab',
-      Moderate: '#ffb689',
-      Minor: '#50d8e9',
+      Critical: '#1C1917',
+      Moderate: '#FF6900',
+      Minor: '#301860',
     };
-    const color = colorMap[severity] || '#5E6BFF';
+    const color = colorMap[severity] || '#301860';
     const isRepaired = status === 'Repaired';
 
     const html = `
@@ -176,13 +176,13 @@ export const PotholeMap: React.FC = () => {
           width: 22px;
           height: 22px;
           border-radius: 50%;
-          background: ${isRepaired ? '#50d8e9' : color};
-          border: 2px solid #ffffff;
-          box-shadow: 0 0 12px ${color};
+          background: ${isRepaired ? '#4830A8' : color};
+          border: 2px solid #FFF0DF;
+          box-shadow: 0 2px 8px rgba(41,37,36,0.25);
           display: flex;
           align-items: center;
           justify-content: center;
-          color: #070708;
+          color: #FFF0DF;
           font-weight: bold;
           font-size: 10px;
         ">
@@ -200,31 +200,31 @@ export const PotholeMap: React.FC = () => {
   }
 
   return (
-    <div className="h-[calc(100vh-80px)] flex flex-col lg:flex-row overflow-hidden relative rounded-xl border border-romer-divider">
+    <div className="h-[calc(100vh-140px)] flex flex-col lg:flex-row overflow-hidden relative rounded-2xl border border-black/10 shadow-sm">
       
       {/* Left Explorer Sidebar */}
-      <div className="w-full lg:w-96 bg-romer-sidebar border-r border-romer-divider p-4 space-y-4 flex flex-col justify-between overflow-y-auto shrink-0 z-10">
+      <div className="w-full lg:w-96 bg-[#FFFFFF] border-r border-black/10 p-4 space-y-4 flex flex-col justify-between overflow-y-auto shrink-0 z-10">
         
         {/* Search & Filter Toolbar */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-h3 font-bold text-romer-text-main tracking-wide flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-romer-cyan" /> GIS Spatial Explorer
+            <h3 className="text-sm font-medium text-[#000000] tracking-tight flex items-center gap-2">
+              <MapPin className="w-4 h-4 text-[#000000]" /> GIS Spatial Explorer
             </h3>
-            <span className="text-[10px] font-mono font-bold bg-romer-cyan/10 text-romer-cyan px-2 py-0.5 rounded border border-romer-cyan/20">
+            <span className="text-[10px] font-mono font-bold bg-[#F2F2F2] text-[#000000] px-2 py-0.5 rounded-full border border-black/10">
               {filteredPotholes.length} Hazards
             </span>
           </div>
 
           {/* Search Box */}
           <div className="relative">
-            <Search className="w-3.5 h-3.5 text-romer-text-muted absolute left-3 top-3" />
+            <Search className="w-3.5 h-3.5 text-[#222222] absolute left-3 top-3" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search street name or ID..."
-              className="w-full bg-[#070708] border border-romer-divider rounded-xl pl-9 pr-3 py-2 text-xs text-romer-text-main placeholder:text-romer-text-muted focus:outline-none focus:border-romer-primary"
+              className="w-full bg-[#F2F2F2] border border-black/10 rounded-xl pl-9 pr-3 py-2 text-xs text-[#000000] placeholder:text-[#222222] focus:outline-none focus:border-[#000000]"
             />
           </div>
 
@@ -232,26 +232,26 @@ export const PotholeMap: React.FC = () => {
           <div className="grid grid-cols-2 gap-2 text-xs">
             {/* Severity Filter */}
             <div>
-              <label className="text-[10px] font-bold text-romer-text-muted uppercase tracking-wider block mb-1 font-mono">Severity</label>
+              <label className="text-[10px] font-medium text-[#222222] uppercase tracking-wider block mb-1 font-mono">Severity</label>
               <select
                 value={filterSeverity}
                 onChange={(e) => setFilterSeverity(e.target.value as any)}
-                className="w-full bg-[#070708] border border-romer-divider rounded-lg px-2 py-1.5 text-romer-text-main text-xs focus:outline-none"
+                className="w-full bg-[#F2F2F2] border border-black/10 rounded-lg px-2 py-1.5 text-[#000000] text-xs focus:outline-none"
               >
                 <option value="All">All Severities</option>
-                <option value="Critical">🔴 Critical</option>
-                <option value="Moderate">🟡 Moderate</option>
-                <option value="Minor">🟢 Minor</option>
+                <option value="Critical">Critical</option>
+                <option value="Moderate">Moderate</option>
+                <option value="Minor">Minor</option>
               </select>
             </div>
 
             {/* Status Filter */}
             <div>
-              <label className="text-[10px] font-bold text-romer-text-muted uppercase tracking-wider block mb-1 font-mono">Repair Status</label>
+              <label className="text-[10px] font-medium text-[#222222] uppercase tracking-wider block mb-1 font-mono">Status</label>
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value as any)}
-                className="w-full bg-[#070708] border border-romer-divider rounded-lg px-2 py-1.5 text-romer-text-main text-xs focus:outline-none"
+                className="w-full bg-[#F2F2F2] border border-black/10 rounded-lg px-2 py-1.5 text-[#000000] text-xs focus:outline-none"
               >
                 <option value="All">All Statuses</option>
                 <option value="Reported">Reported</option>
@@ -266,40 +266,40 @@ export const PotholeMap: React.FC = () => {
         {/* Scrollable Pothole List */}
         <div className="flex-1 overflow-y-auto space-y-2 pr-1 my-2 min-h-[200px]">
           {filteredPotholes.length === 0 ? (
-            <div className="text-center py-12 text-romer-text-muted text-xs">
+            <div className="text-center py-12 text-[#222222] text-xs">
               No potholes match your current spatial filter criteria.
             </div>
           ) : (
             filteredPotholes.map((p) => {
               const isSelected = selectedPothole?.id === p.id;
               const sevColors = {
-                Critical: 'border-rose-500/30 text-rose-300 bg-rose-950/20',
-                Moderate: 'border-romer-amber/30 text-romer-amber bg-romer-amber/10',
-                Minor: 'border-romer-cyan/30 text-romer-cyan bg-romer-cyan/10',
+                Critical: 'border-[#000000] text-[#FFFFFF] bg-[#000000]',
+                Moderate: 'border-black/20 text-[#000000] bg-black/5',
+                Minor: 'border-black/10 text-[#222222] bg-[#F2F2F2]',
               };
 
               return (
                 <div
                   key={p.id}
                   onClick={() => setSelectedPothole(p)}
-                  className={`p-3 rounded-xl border transition-all cursor-pointer inner-glow ${
+                  className={`p-3 rounded-xl border transition-all cursor-pointer ${
                     isSelected
-                      ? 'bg-romer-card border-romer-primary shadow-md shadow-romer-primary/10'
-                      : 'bg-romer-card/60 border-romer-divider hover:border-romer-text-muted hover:bg-romer-card'
+                      ? 'bg-[#F2F2F2] border-[#000000] shadow-sm font-medium'
+                      : 'bg-[#FFFFFF] border-black/10 hover:border-black/30'
                   }`}
                 >
                   <div className="flex items-center justify-between mb-1">
-                    <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded border ${sevColors[p.severity]}`}>
+                    <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full border ${sevColors[p.severity]}`}>
                       {p.severity}
                     </span>
-                    <span className="text-[10px] font-mono text-romer-text-muted">{p.confidence}% Conf</span>
+                    <span className="text-[10px] font-mono text-[#222222]">{p.confidence}% Conf</span>
                   </div>
 
-                  <h4 className="text-xs font-bold text-romer-text-main truncate">{p.streetName}</h4>
+                  <h4 className="text-xs font-bold text-[#000000] truncate">{p.streetName}</h4>
                   
-                  <div className="flex items-center justify-between mt-2 text-[11px] text-romer-text-muted font-mono">
+                  <div className="flex items-center justify-between mt-2 text-[11px] text-[#222222] font-mono">
                     <span>{p.latitude.toFixed(4)}, {p.longitude.toFixed(4)}</span>
-                    <span className="text-romer-text-main font-semibold">{p.repairStatus}</span>
+                    <span className="text-[#000000] font-medium">{p.repairStatus}</span>
                   </div>
                 </div>
               );
@@ -308,21 +308,21 @@ export const PotholeMap: React.FC = () => {
         </div>
 
         {/* Map View Mode Toggles */}
-        <div className="pt-3 border-t border-romer-divider space-y-2">
+        <div className="pt-3 border-t border-black/10 space-y-2">
           <div className="flex items-center justify-between gap-2">
             <button
               onClick={() => setTileMode(tileMode === 'dark' ? 'satellite' : 'dark')}
-              className="flex-1 py-2 px-3 bg-romer-card hover:bg-romer-panel border border-romer-divider rounded-xl text-xs font-semibold text-romer-text-main flex items-center justify-center gap-1.5 inner-glow"
+              className="flex-1 py-2 px-3 bg-[#F2F2F2] hover:bg-black/5 border border-black/10 rounded-full text-xs font-medium text-[#000000] flex items-center justify-center gap-1.5 shadow-sm"
             >
-              <Layers className="w-3.5 h-3.5 text-romer-cyan" />
-              <span>{tileMode === 'dark' ? 'Satellite View' : 'Dark Map'}</span>
+              <Layers className="w-3.5 h-3.5 text-[#000000]" />
+              <span>{tileMode === 'dark' ? 'Satellite View' : 'Light Map'}</span>
             </button>
             <button
               onClick={() => setShowHeatmap(!showHeatmap)}
-              className={`py-2 px-3 border rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors inner-glow ${
+              className={`py-2 px-3 border rounded-full text-xs font-medium flex items-center justify-center gap-1.5 transition-colors ${
                 showHeatmap
-                  ? 'bg-romer-amber/10 border-romer-amber/40 text-romer-amber'
-                  : 'bg-romer-card border-romer-divider text-romer-text-muted hover:bg-romer-panel'
+                  ? 'bg-[#000000] text-[#FFFFFF] border-[#000000]'
+                  : 'bg-[#F2F2F2] border-black/10 text-[#222222] hover:bg-black/5'
               }`}
             >
               <Flame className="w-3.5 h-3.5" />
@@ -339,19 +339,19 @@ export const PotholeMap: React.FC = () => {
 
         {/* Selected Pothole Floating Inspector Modal Card */}
         {selectedPothole && (
-          <div className="absolute bottom-5 right-5 z-20 w-full max-w-sm glass-panel rounded-2xl p-4 shadow-2xl space-y-3 animate-in slide-in-from-bottom duration-200">
+          <div className="absolute bottom-5 right-5 z-20 w-full max-w-sm bg-[#FFFFFF] border border-black/10 rounded-2xl p-4 shadow-xl space-y-3 animate-in slide-in-from-bottom duration-200">
             
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-romer-divider pb-2">
+            <div className="flex items-center justify-between border-b border-black/10 pb-2">
               <div>
-                <span className="text-[10px] font-mono font-bold text-romer-cyan uppercase tracking-wider">
+                <span className="text-[10px] font-mono font-bold text-[#000000] uppercase tracking-wider">
                   Hazard Snapshot Inspector
                 </span>
-                <h3 className="text-sm font-h3 font-bold text-romer-text-main">{selectedPothole.streetName}</h3>
+                <h3 className="text-sm font-bold text-[#000000]">{selectedPothole.streetName}</h3>
               </div>
               <button
                 onClick={() => setSelectedPothole(null)}
-                className="text-romer-text-muted hover:text-romer-text-main p-1"
+                className="text-[#222222] hover:text-[#000000] p-1"
               >
                 ✕
               </button>
@@ -359,50 +359,50 @@ export const PotholeMap: React.FC = () => {
 
             {/* Visual Frame Image Snapshot if available */}
             {selectedPothole.snapshotUrl ? (
-              <div className="relative aspect-video rounded-xl overflow-hidden border border-romer-divider bg-[#070708]">
+              <div className="relative aspect-video rounded-xl overflow-hidden border border-black/10 bg-[#000000]">
                 <img
                   src={selectedPothole.snapshotUrl}
                   alt="Pothole Bounding Box Snapshot"
                   className="w-full h-full object-cover"
                 />
-                <div className="absolute top-2 right-2 bg-[#070708]/80 px-2 py-0.5 rounded text-[10px] font-mono text-romer-cyan border border-romer-cyan/30">
+                <div className="absolute top-2 right-2 bg-[#000000]/80 px-2 py-0.5 rounded text-[10px] font-mono text-[#FFFFFF]">
                   {selectedPothole.confidence}% AI Confidence
                 </div>
               </div>
             ) : null}
 
             {/* Details Grid */}
-            <div className="grid grid-cols-2 gap-2 text-xs font-mono bg-[#070708] p-3 rounded-xl border border-romer-divider">
+            <div className="grid grid-cols-2 gap-2 text-xs font-mono bg-[#F2F2F2] p-3 rounded-xl border border-black/10">
               <div>
-                <span className="text-romer-text-muted text-[10px]">SEVERITY</span>
-                <p className="font-bold text-romer-amber">{selectedPothole.severity}</p>
+                <span className="text-[#222222] text-[10px]">SEVERITY</span>
+                <p className="font-bold text-[#000000]">{selectedPothole.severity}</p>
               </div>
               <div>
-                <span className="text-romer-text-muted text-[10px]">SURFACE AREA</span>
-                <p className="font-bold text-romer-cyan">{selectedPothole.estimatedAreaCm2} cm²</p>
+                <span className="text-[#222222] text-[10px]">SURFACE AREA</span>
+                <p className="font-bold text-[#000000]">{selectedPothole.estimatedAreaCm2} cm²</p>
               </div>
               <div>
-                <span className="text-romer-text-muted text-[10px]">VEHICLE SPEED</span>
-                <p className="font-bold text-romer-text-main">{selectedPothole.speedKmH} km/h</p>
+                <span className="text-[#222222] text-[10px]">SPEED</span>
+                <p className="font-bold text-[#000000]">{selectedPothole.speedKmH} km/h</p>
               </div>
               <div>
-                <span className="text-romer-text-muted text-[10px]">GPS COORDS</span>
-                <p className="font-bold text-romer-text-main truncate">{selectedPothole.latitude.toFixed(4)}, {selectedPothole.longitude.toFixed(4)}</p>
+                <span className="text-[#222222] text-[10px]">GPS</span>
+                <p className="font-bold text-[#000000] truncate">{selectedPothole.latitude.toFixed(4)}, {selectedPothole.longitude.toFixed(4)}</p>
               </div>
             </div>
 
             {/* Repair Status Update Controls */}
             <div className="flex items-center justify-between pt-1">
-              <span className="text-xs font-bold text-romer-text-main">Repair Status:</span>
+              <span className="text-xs font-medium text-[#000000]">Status:</span>
               <div className="flex gap-1">
                 {(['Reported', 'Scheduled', 'Repaired'] as RepairStatus[]).map((status) => (
                   <button
                     key={status}
                     onClick={() => updateStatus(selectedPothole.id, status)}
-                    className={`px-2.5 py-1 text-[10px] font-bold rounded-lg transition-colors ${
+                    className={`px-2.5 py-1 text-[10px] font-medium rounded-lg transition-colors ${
                       selectedPothole.repairStatus === status
-                        ? 'bg-romer-primary text-white shadow'
-                        : 'bg-romer-card text-romer-text-muted hover:text-romer-text-main border border-romer-divider'
+                        ? 'bg-[#000000] text-[#FFFFFF] shadow'
+                        : 'bg-[#F2F2F2] text-[#222222] hover:text-[#000000] border border-black/10'
                     }`}
                   >
                     {status}

@@ -53,17 +53,17 @@ const MainContent: React.FC = () => {
         {activeTab === 'table' && <PotholeTable />}
       </main>
 
-      {/* Romer Enterprise Dark Footer */}
-      <footer className="border-t border-romer-divider py-4 px-6 text-center text-xs text-romer-text-muted bg-romer-sidebar">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+      {/* Instrument Typography Paper Light Footer */}
+      <footer className="border-t border-black/10 py-6 px-6 text-center text-xs text-[#222222] bg-[#F2F2F2]">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
           <span>
-            © 2026 <strong className="text-romer-text-main font-h3">PotholeVision AI Enterprise</strong> • Roboflow Deep Learning YOLOv8/v11 Vision System
+            © 2026 <strong className="text-[#000000]">PotholeVision AI</strong> • Instrument Typography System
           </span>
-          <div className="flex items-center gap-4 font-mono text-[11px]">
+          <div className="flex items-center gap-4 font-mono text-[11px] text-[#000000]">
             <span className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-romer-cyan animate-pulse" /> System Operational
+              <span className="w-2 h-2 rounded-full bg-[#000000] animate-pulse" /> System Operational
             </span>
-            <span>Zero-Config Spatial IndexedDB</span>
+            <span>Spatial IndexedDB</span>
           </div>
         </div>
       </footer>
