@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { usePotholes } from '../../context/PotholeContext';
 import { RepairStatus, SeverityLevel, PotholeRecord } from '../../types/pothole';
+import { AdminLoginModal } from '../Common/AdminLoginModal';
 import { 
   Table as TableIcon, 
   Search, 
@@ -11,7 +12,10 @@ import {
   ExternalLink,
   ChevronLeft,
   ChevronRight,
-  Sparkles
+  Sparkles,
+  Lock,
+  LogOut,
+  ShieldCheck
 } from 'lucide-react';
 
 export const PotholeTable: React.FC = () => {
@@ -29,12 +33,55 @@ export const PotholeTable: React.FC = () => {
     exportGeoJSON,
     exportCSV,
     setSelectedPothole,
-    setActiveTab
+    setActiveTab,
+    isAdminAuthenticated,
+    loginAdmin,
+    logoutAdmin
   } = usePotholes();
 
+  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
   const [previewPothole, setPreviewPothole] = useState<PotholeRecord | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
+
+  // If user is not authenticated as admin, show security checkpoint
+  if (!isAdminAuthenticated) {
+    return (
+      <div className="max-w-2xl mx-auto py-16 px-4 text-center space-y-6 animate-in fade-in duration-300">
+        <div className="w-16 h-16 rounded-2xl bg-[#000000] text-[#FFFFFF] flex items-center justify-center mx-auto shadow-xl">
+          <Lock className="w-8 h-8" />
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-2xl sm:text-3xl font-normal text-[#000000] tracking-tight">
+            Restricted <span className="serif-italic font-normal">Data Registry</span>
+          </h2>
+          <p className="text-sm text-[#444444] max-w-md mx-auto leading-relaxed">
+            The municipal pothole registry and maintenance records are protected. Please authenticate with administrator credentials to view and manage work orders.
+          </p>
+        </div>
+
+        <div className="pt-2">
+          <button
+            onClick={() => setIsAdminModalOpen(true)}
+            className="px-8 py-3 bg-[#000000] hover:bg-[#222222] text-[#FFFFFF] font-medium text-sm rounded-full shadow-md transition-all active:scale-95 inline-flex items-center gap-2"
+          >
+            <ShieldCheck className="w-4 h-4" />
+            <span>Sign In as Admin</span>
+          </button>
+        </div>
+
+        <div className="pt-4 text-xs font-mono text-[#666666]">
+          Authorized: <strong className="text-[#000000]">admin@gmail.com</strong>
+        </div>
+
+        <AdminLoginModal
+          isOpen={isAdminModalOpen}
+          onClose={() => setIsAdminModalOpen(false)}
+          onSuccess={loginAdmin}
+        />
+      </div>
+    );
+  }
 
   // Filtered
   const filtered = potholes.filter((p) => {
@@ -88,6 +135,13 @@ export const PotholeTable: React.FC = () => {
             className="px-4 py-2 bg-[#F2F2F2] hover:bg-black/5 border border-black/10 text-xs font-medium text-[#000000] rounded-full flex items-center gap-1.5 transition-colors shadow-sm"
           >
             <Download className="w-3.5 h-3.5 text-[#000000]" /> GeoJSON
+          </button>
+          <button
+            onClick={logoutAdmin}
+            className="px-4 py-2 bg-red-50 hover:bg-red-100 border border-red-200 text-xs font-medium text-red-700 rounded-full flex items-center gap-1.5 transition-colors shadow-sm"
+            title="Log out of Admin session"
+          >
+            <LogOut className="w-3.5 h-3.5" /> Logout
           </button>
         </div>
       </div>
