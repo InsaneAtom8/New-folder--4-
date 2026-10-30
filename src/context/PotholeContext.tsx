@@ -44,6 +44,11 @@ interface PotholeContextType {
   toasts: ToastNotification[];
   addToast: (type: ToastNotification['type'], title: string, message: string) => void;
   removeToast: (id: string) => void;
+
+  // Admin Authentication State
+  isAdminAuthenticated: boolean;
+  loginAdmin: () => void;
+  logoutAdmin: () => void;
 }
 
 const DEFAULT_AI_CONFIG: AIConfig = {
@@ -69,6 +74,21 @@ export const PotholeProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   const [toasts, setToasts] = useState<ToastNotification[]>([]);
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(() => {
+    return sessionStorage.getItem('potholevision_admin') === 'true';
+  });
+
+  const loginAdmin = () => {
+    setIsAdminAuthenticated(true);
+    sessionStorage.setItem('potholevision_admin', 'true');
+    addToast('success', 'Admin Authenticated', 'Access granted to Data Registry');
+  };
+
+  const logoutAdmin = () => {
+    setIsAdminAuthenticated(false);
+    sessionStorage.removeItem('potholevision_admin');
+    addToast('info', 'Logged Out', 'Admin session terminated');
+  };
 
   useEffect(() => {
     loadDatabase();
@@ -251,6 +271,9 @@ export const PotholeProvider: React.FC<{ children: React.ReactNode }> = ({ child
         toasts,
         addToast,
         removeToast,
+        isAdminAuthenticated,
+        loginAdmin,
+        logoutAdmin,
       }}
     >
       {children}
