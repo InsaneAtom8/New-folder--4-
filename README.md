@@ -144,6 +144,9 @@ final_metrics:
 ## 🛠️ System Features & Tech Stack
 
 * **Frontend:** React 19, TypeScript 5.7, Vite 6, Tailwind CSS, Lucide Icons.
+* **Role-Based Admin Access:** Protected Data Registry with credentials authentication (`admin@gmail.com` / `admin123`).
+* **Intelligent Video Ingestion Pre-Check:** Pre-validates incoming video frames using computer-vision heuristics (asphalt/concrete road surface ratio, perspective luminance, saturation check) to reject non-road footage (e.g. indoor clips, cartoons, blank screens) prior to executing YOLO inference.
+* **Road Snapping & Corridor Alignment:** Centerline snapping engine aligning visual detections with OpenStreetMap highway geometry.
 * **Mapping & GIS:** Leaflet, React-Leaflet, Leaflet MarkerCluster, Leaflet Heatmap.
 * **Analytics:** Chart.js, React-ChartJS-2 (Severity distributions, time-series telemetry).
 * **Storage:** Client-side IndexedDB persistence (`PotholeVisionDB`) with GeoJSON/CSV export.
