@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { usePotholes, AppTab } from '../../context/PotholeContext';
 import { AISettingsModal } from './AISettingsModal';
+import { AdminLoginModal } from '../Common/AdminLoginModal';
 import { 
   Video, 
   Map, 
@@ -15,7 +16,8 @@ import {
   ChevronDown,
   Sparkles,
   Menu,
-  X
+  X,
+  Lock
 } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
@@ -27,11 +29,14 @@ export const Navbar: React.FC = () => {
     exportGeoJSON, 
     exportCSV, 
     importGeoJSON, 
-    clearAll 
+    clearAll,
+    isAdminAuthenticated,
+    loginAdmin
   } = usePotholes();
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
+  const [isAdminLoginOpen, setIsAdminLoginOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -103,11 +108,16 @@ export const Navbar: React.FC = () => {
           <nav className="w-full lg:w-auto overflow-x-auto no-scrollbar flex items-center gap-1 bg-[#F2F2F2] p-1 rounded-full border border-black/10 shrink-0">
             {tabs.map((tab) => {
               const isActive = activeTab === tab.id;
+              const isRestricted = tab.id === 'table' && !isAdminAuthenticated;
               return (
                 <button
                   key={tab.id}
                   onClick={() => {
-                    setActiveTab(tab.id);
+                    if (isRestricted) {
+                      setIsAdminLoginOpen(true);
+                    } else {
+                      setActiveTab(tab.id);
+                    }
                     setIsMobileMenuOpen(false);
                   }}
                   className={`flex items-center gap-2 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap ${
@@ -116,7 +126,7 @@ export const Navbar: React.FC = () => {
                       : 'text-[#222222] hover:text-[#000000]'
                   }`}
                 >
-                  {tab.icon}
+                  {isRestricted ? <Lock className="w-3.5 h-3.5 text-black/60" /> : tab.icon}
                   <span>{tab.label}</span>
                 </button>
               );
@@ -251,6 +261,14 @@ export const Navbar: React.FC = () => {
       />
 
       <AISettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
+      <AdminLoginModal
+        isOpen={isAdminLoginOpen}
+        onClose={() => setIsAdminLoginOpen(false)}
+        onSuccess={() => {
+          loginAdmin();
+          setActiveTab('table');
+        }}
+      />
     </>
   );
 };
