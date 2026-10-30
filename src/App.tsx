@@ -7,10 +7,12 @@ import { DetectionCanvas } from './components/Detector/DetectionCanvas';
 import { PotholeMap } from './components/Map/PotholeMap';
 import { AnalyticsDashboard } from './components/Dashboard/AnalyticsDashboard';
 import { PotholeTable } from './components/Table/PotholeTable';
+import { LoadingScreen } from './components/Common/LoadingScreen';
 import { GPSPoint } from './types/pothole';
 
 const MainContent: React.FC = () => {
-  const { activeTab } = usePotholes();
+  const { activeTab, isLoading } = usePotholes();
+  const [showSplash, setShowSplash] = useState(true);
 
   // Active Processing State
   const [activeVideoFile, setActiveVideoFile] = useState<File | null>(null);
@@ -29,10 +31,14 @@ const MainContent: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-romer-bg text-romer-text-main flex flex-col justify-between selection:bg-romer-primary selection:text-white">
+      {/* Initial System Startup Loader */}
+      {showSplash && (
+        <LoadingScreen onFinish={() => setShowSplash(false)} minDurationMs={1100} />
+      )}
       
       <Navbar />
 
-      <main className="flex-1 p-4 lg:p-6 bg-romer-bg">
+      <main className="flex-1 px-4 sm:px-6 lg:px-12 py-8 sm:py-12 bg-romer-bg">
         {activeTab === 'uploader' && (
           activeVideoFile ? (
             <DetectionCanvas
@@ -54,14 +60,14 @@ const MainContent: React.FC = () => {
       </main>
 
       {/* Instrument Typography Paper Light Footer */}
-      <footer className="border-t border-black/10 py-6 px-6 text-center text-xs text-[#222222] bg-[#F2F2F2]">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+      <footer className="border-t border-black/10 py-8 px-6 sm:px-12 text-center text-xs text-[#222222] bg-[#F2F2F2]">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <span>
             © 2026 <strong className="text-[#000000]">PotholeVision AI</strong> • Instrument Typography System
           </span>
-          <div className="flex items-center gap-4 font-mono text-[11px] text-[#000000]">
+          <div className="flex items-center gap-6 font-mono text-[11px] text-[#000000]">
             <span className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-[#000000] animate-pulse" /> System Operational
+              <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" /> System Operational
             </span>
             <span>Spatial IndexedDB</span>
           </div>
