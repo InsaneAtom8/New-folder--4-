@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { usePotholes } from '../../context/PotholeContext';
 import { GPSPoint } from '../../types/pothole';
 import { parseGPX, parseNMEA, parseCSV } from '../../utils/gpxParser';
+import { validateVideoIsRoadOrPothole } from '../../utils/roadValidator';
 import { 
   Video, 
   FileCode, 
@@ -32,17 +33,34 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({ onVideoLoaded }) =
   const [isDragOverGps, setIsDragOverGps] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [locationStatus, setLocationStatus] = useState<string | null>(null);
+  const [isValidatingVideo, setIsValidatingVideo] = useState(false);
 
   const videoInputRef = useRef<HTMLInputElement>(null);
   const gpsInputRef = useRef<HTMLInputElement>(null);
 
-  const handleVideoSelect = (file: File) => {
+  const handleVideoSelect = async (file: File) => {
     if (!file.type.includes('video/') && !file.name.endsWith('.mp4') && !file.name.endsWith('.webm')) {
       setErrorMsg('Please select a valid video file (MP4 or WebM format recommended)');
       return;
     }
     setErrorMsg(null);
-    setVideoFile(file);
+    setIsValidatingVideo(true);
+
+    try {
+      const validation = await validateVideoIsRoadOrPothole(file);
+      setIsValidatingVideo(false);
+
+      if (!validation.isValidRoad) {
+        setVideoFile(null);
+        setErrorMsg(validation.reason || 'Selected video does not appear to contain road or pothole footage. AI vision aborted.');
+        return;
+      }
+
+      setVideoFile(file);
+    } catch (err) {
+      setIsValidatingVideo(false);
+      setVideoFile(file);
+    }
   };
 
   const handleGpsSelect = async (file: File) => {
@@ -96,35 +114,35 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({ onVideoLoaded }) =
   };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-16 pb-20 animate-in fade-in duration-300">
+    <div className="max-w-5xl mx-auto space-y-12 sm:space-y-16 pb-20 animate-in fade-in duration-300">
       
-      {/* Hero Display Section: Instrument Sans 60px/400 with Instrument Serif Italic re-lettered single word */}
-      <div className="text-center space-y-4 sm:space-y-6 pt-4 sm:pt-8">
-        <h1 className="text-3xl sm:text-4xl md:text-[52px] lg:text-[60px] font-normal text-[#000000] tracking-[-1.2px] leading-[1.12] max-w-4xl mx-auto px-2">
-          AI Road Vision for <span className="serif-italic font-normal">Pothole</span> Hazard Inspection.
+      {/* Hero Display Section: Instrument Sans with Serif Italic re-lettered word */}
+      <div className="text-center space-y-5 sm:space-y-7 pt-6 sm:pt-10">
+        <h1 className="text-3xl sm:text-4xl md:text-[50px] lg:text-[58px] font-normal text-[#000000] tracking-[-1.2px] !leading-[1.28] sm:!leading-[1.3] max-w-4xl mx-auto px-4">
+          AI Road Vision for <span className="serif-italic font-normal inline-block mx-1.5 align-baseline">Pothole</span> Hazard Inspection.
         </h1>
-        <p className="text-sm sm:text-base text-[#222222] max-w-2xl mx-auto leading-relaxed px-2">
+        <p className="text-sm sm:text-base text-[#444444] max-w-2xl mx-auto leading-relaxed px-4 pt-1">
           Upload dashcam video telemetry to run deep-learning object detection, correlated directly to GIS spatial coordinates.
         </p>
 
-        {/* Hero Stacked Actions: Black Fills & Borders */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+        {/* Hero Stacked Actions: Black Fills & Borders with improved touch targets & breathing room */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 pt-4">
           <button
-            disabled={!videoFile}
+            disabled={!videoFile || isValidatingVideo}
             onClick={handleStartProcessing}
-            className={`h-12 px-8 rounded-full font-medium text-sm transition-all duration-200 flex items-center justify-center gap-2.5 ${
-              videoFile
-                ? 'bg-[#000000] hover:bg-[#222222] text-[#FFFFFF] cursor-pointer shadow-md'
+            className={`h-12 px-8 rounded-full font-medium text-sm transition-all duration-200 flex items-center justify-center gap-2.5 shadow-sm ${
+              videoFile && !isValidatingVideo
+                ? 'bg-[#000000] hover:bg-[#222222] text-[#FFFFFF] cursor-pointer shadow-md active:scale-95'
                 : 'bg-[#000000]/40 text-[#FFFFFF]/60 cursor-not-allowed'
             }`}
           >
             <Sparkles className="w-4 h-4" />
-            <span>Start AI Vision Scanning</span>
+            <span>{isValidatingVideo ? 'Validating Road Scene...' : 'Start AI Vision Scanning'}</span>
           </button>
 
           <button
             onClick={() => setActiveTab('map')}
-            className="h-12 px-6 rounded-full bg-[#FFFFFF] text-[#000000] border border-black/20 hover:border-black font-medium text-sm transition-all flex items-center justify-center gap-2"
+            className="h-12 px-7 rounded-full bg-[#FFFFFF] text-[#000000] border border-black/20 hover:border-black/60 hover:bg-black/[0.02] font-medium text-sm transition-all flex items-center justify-center gap-2 active:scale-95 shadow-sm"
           >
             <span>Explore Live GIS Map</span>
           </button>
@@ -132,19 +150,19 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({ onVideoLoaded }) =
       </div>
 
       {errorMsg && (
-        <div className="bg-[#F2F2F2] border border-black/20 text-[#000000] px-4 py-3 rounded-xl text-xs flex items-center gap-2 max-w-xl mx-auto">
-          <AlertCircle className="w-4 h-4 shrink-0" />
+        <div className="bg-[#F2F2F2] border border-black/20 text-[#000000] px-5 py-3.5 rounded-xl text-xs flex items-center gap-2.5 max-w-xl mx-auto shadow-sm">
+          <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
           <span>{errorMsg}</span>
         </div>
       )}
 
-      {/* Inputs Section: Paper Gray Surfaces (#F2F2F2) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* Inputs Section: Paper Gray Surfaces (#F2F2F2) with generous spacing */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 pt-2">
         
         {/* Step 1: Video File Dropzone */}
-        <div className="bg-[#F2F2F2] border border-black/10 rounded-2xl p-6 space-y-4 flex flex-col justify-between">
+        <div className="bg-[#F2F2F2] border border-black/10 hover:border-black/20 transition-colors rounded-2xl p-6 sm:p-7 space-y-5 flex flex-col justify-between shadow-sm">
           <div>
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-4">
               <span className="text-sm font-medium text-[#000000] flex items-center gap-2">
                 <Video className="w-4 h-4" /> 1. Dashcam Video File
               </span>
@@ -162,27 +180,35 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({ onVideoLoaded }) =
                 setIsDragOverVideo(false);
                 if (e.dataTransfer.files?.[0]) handleVideoSelect(e.dataTransfer.files[0]);
               }}
-              className={`border border-dashed rounded-xl p-8 text-center cursor-pointer transition-all duration-200 ${
+              className={`border border-dashed rounded-xl p-8 sm:p-10 text-center cursor-pointer transition-all duration-200 ${
                 videoFile
-                  ? 'border-black bg-[#FFFFFF] text-[#000000]'
+                  ? 'border-black bg-[#FFFFFF] text-[#000000] shadow-sm'
                   : isDragOverVideo
-                  ? 'border-black bg-black/5'
+                  ? 'border-black bg-black/5 scale-[0.99]'
                   : 'border-black/20 hover:border-black/50 bg-[#FFFFFF] text-[#222222]'
               }`}
             >
-              {videoFile ? (
-                <div className="space-y-2">
-                  <CheckCircle2 className="w-8 h-8 text-[#000000] mx-auto" />
-                  <h4 className="text-sm font-medium truncate max-w-[240px] mx-auto text-[#000000]">{videoFile.name}</h4>
-                  <p className="text-xs font-mono text-[#222222]">
-                    {(videoFile.size / (1024 * 1024)).toFixed(2)} MB • Ready
+              {isValidatingVideo ? (
+                <div className="space-y-2.5">
+                  <div className="w-9 h-9 border-2 border-black border-t-transparent rounded-full animate-spin mx-auto" />
+                  <h4 className="text-sm font-medium text-[#000000]">Inspecting Video Content...</h4>
+                  <p className="text-xs font-mono text-[#555555]">Verifying road & asphalt surface presence</p>
+                </div>
+              ) : videoFile ? (
+                <div className="space-y-2.5">
+                  <CheckCircle2 className="w-9 h-9 text-emerald-600 mx-auto" />
+                  <h4 className="text-sm font-medium truncate max-w-[260px] mx-auto text-[#000000]">{videoFile.name}</h4>
+                  <p className="text-xs font-mono text-[#555555]">
+                    {(videoFile.size / (1024 * 1024)).toFixed(2)} MB • Road Scene Verified
                   </p>
                 </div>
               ) : (
-                <div className="space-y-2">
-                  <UploadCloud className="w-8 h-8 text-[#000000] mx-auto" />
+                <div className="space-y-2.5">
+                  <div className="w-12 h-12 rounded-xl bg-black/5 flex items-center justify-center mx-auto text-[#000000]">
+                    <UploadCloud className="w-6 h-6" />
+                  </div>
                   <h4 className="text-sm font-medium text-[#000000]">Select MP4 Video File</h4>
-                  <p className="text-xs text-[#222222]">Drag & drop or click to browse</p>
+                  <p className="text-xs text-[#555555]">Drag & drop or click to browse</p>
                 </div>
               )}
             </div>
@@ -197,9 +223,9 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({ onVideoLoaded }) =
         </div>
 
         {/* Step 2: GPS Telemetry File Dropzone */}
-        <div className="bg-[#F2F2F2] border border-black/10 rounded-2xl p-6 space-y-4 flex flex-col justify-between">
+        <div className="bg-[#F2F2F2] border border-black/10 hover:border-black/20 transition-colors rounded-2xl p-6 sm:p-7 space-y-5 flex flex-col justify-between shadow-sm">
           <div>
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-4">
               <span className="text-sm font-medium text-[#000000] flex items-center gap-2">
                 <FileCode className="w-4 h-4" /> 2. GPS Location Log
               </span>
@@ -217,27 +243,29 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({ onVideoLoaded }) =
                 setIsDragOverGps(false);
                 if (e.dataTransfer.files?.[0]) handleGpsSelect(e.dataTransfer.files[0]);
               }}
-              className={`border border-dashed rounded-xl p-8 text-center cursor-pointer transition-all duration-200 ${
+              className={`border border-dashed rounded-xl p-8 sm:p-10 text-center cursor-pointer transition-all duration-200 ${
                 gpsFile
-                  ? 'border-black bg-[#FFFFFF] text-[#000000]'
+                  ? 'border-black bg-[#FFFFFF] text-[#000000] shadow-sm'
                   : isDragOverGps
-                  ? 'border-black bg-black/5'
+                  ? 'border-black bg-black/5 scale-[0.99]'
                   : 'border-black/20 hover:border-black/50 bg-[#FFFFFF] text-[#222222]'
               }`}
             >
               {gpsFile ? (
-                <div className="space-y-2">
-                  <CheckCircle2 className="w-8 h-8 text-[#000000] mx-auto" />
-                  <h4 className="text-sm font-medium truncate max-w-[240px] mx-auto text-[#000000]">{gpsFile.name}</h4>
+                <div className="space-y-2.5">
+                  <CheckCircle2 className="w-9 h-9 text-emerald-600 mx-auto" />
+                  <h4 className="text-sm font-medium truncate max-w-[260px] mx-auto text-[#000000]">{gpsFile.name}</h4>
                   <p className="text-xs font-mono text-[#000000] font-medium">
-                    {parsedGpsPoints.length} Trackpoints
+                    {parsedGpsPoints.length} Trackpoints Loaded
                   </p>
                 </div>
               ) : (
-                <div className="space-y-2">
-                  <MapPin className="w-8 h-8 text-[#000000] mx-auto" />
+                <div className="space-y-2.5">
+                  <div className="w-12 h-12 rounded-xl bg-black/5 flex items-center justify-center mx-auto text-[#000000]">
+                    <MapPin className="w-6 h-6" />
+                  </div>
                   <h4 className="text-sm font-medium text-[#000000]">Upload GPX / NMEA / CSV</h4>
-                  <p className="text-xs text-[#222222]">Syncs timestamp to GPS coordinates</p>
+                  <p className="text-xs text-[#555555]">Syncs timestamp to GPS coordinates</p>
                 </div>
               )}
             </div>
@@ -254,13 +282,13 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({ onVideoLoaded }) =
             <button
               type="button"
               onClick={handleDetectLiveLocation}
-              className="text-xs bg-[#FFFFFF] hover:bg-black/5 text-[#000000] border border-black/10 font-medium px-3.5 py-1.5 rounded-full flex items-center gap-1.5 transition-all"
+              className="text-xs bg-[#FFFFFF] hover:bg-black/5 text-[#000000] border border-black/10 font-medium px-4 py-2 rounded-full flex items-center gap-1.5 transition-all shadow-sm active:scale-95"
             >
               <MapPin className="w-3.5 h-3.5" />
               <span>Use Current Position</span>
             </button>
             {locationStatus && (
-              <span className="text-[11px] font-mono text-[#000000] truncate max-w-[180px]">
+              <span className="text-[11px] font-mono text-[#000000] truncate max-w-[200px]">
                 {locationStatus}
               </span>
             )}
@@ -269,52 +297,52 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({ onVideoLoaded }) =
 
       </div>
 
-      {/* Model Engine Selector: Paper-Gray Field */}
-      <div className="bg-[#F2F2F2] border border-black/10 rounded-2xl p-6 space-y-4">
+      {/* Model Engine Selector: Paper-Gray Field with polished paddings */}
+      <div className="bg-[#F2F2F2] border border-black/10 rounded-2xl p-6 sm:p-7 space-y-4 shadow-sm">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-medium text-[#000000] flex items-center gap-2">
             <Sparkles className="w-4 h-4" /> AI Neural Engine Preset
           </h3>
-          <span className="text-xs font-mono text-[#222222]">
+          <span className="text-xs font-mono text-[#444444] bg-white/60 px-2.5 py-1 rounded-md border border-black/5">
             Confidence Threshold: {Math.round(aiConfig.confidenceThreshold * 100)}%
           </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
           <div
             onClick={() => setAIConfig({ ...aiConfig, activeModelPreset: 'rdd2022-custom' })}
-            className={`p-4 rounded-xl border cursor-pointer transition-all ${
+            className={`p-5 rounded-xl border cursor-pointer transition-all ${
               aiConfig.activeModelPreset === 'rdd2022-custom'
-                ? 'bg-[#000000] text-[#FFFFFF] border-[#000000]'
+                ? 'bg-[#000000] text-[#FFFFFF] border-[#000000] shadow-md'
                 : 'bg-[#FFFFFF] text-[#000000] border-black/10 hover:border-black/30'
             }`}
           >
-            <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center justify-between mb-1.5">
               <span className="text-xs font-medium">Local YOLOv12 Engine</span>
               {aiConfig.activeModelPreset === 'rdd2022-custom' && (
                 <span className="w-2 h-2 rounded-full bg-[#FFFFFF] animate-pulse" />
               )}
             </div>
-            <p className={`text-xs ${aiConfig.activeModelPreset === 'rdd2022-custom' ? 'text-[#FFFFFF]/80' : 'text-[#222222]'}`}>
+            <p className={`text-xs ${aiConfig.activeModelPreset === 'rdd2022-custom' ? 'text-[#FFFFFF]/80' : 'text-[#444444]'}`}>
               Local FastAPI inference endpoint for custom weights
             </p>
           </div>
 
           <div
             onClick={() => setAIConfig({ ...aiConfig, activeModelPreset: 'roboflow-yolo' })}
-            className={`p-4 rounded-xl border cursor-pointer transition-all ${
+            className={`p-5 rounded-xl border cursor-pointer transition-all ${
               aiConfig.activeModelPreset === 'roboflow-yolo'
-                ? 'bg-[#000000] text-[#FFFFFF] border-[#000000]'
+                ? 'bg-[#000000] text-[#FFFFFF] border-[#000000] shadow-md'
                 : 'bg-[#FFFFFF] text-[#000000] border-black/10 hover:border-black/30'
             }`}
           >
-            <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center justify-between mb-1.5">
               <span className="text-xs font-medium">Roboflow Hosted Cloud API</span>
               {aiConfig.activeModelPreset === 'roboflow-yolo' && (
                 <span className="w-2 h-2 rounded-full bg-[#FFFFFF] animate-pulse" />
               )}
             </div>
-            <p className={`text-xs ${aiConfig.activeModelPreset === 'roboflow-yolo' ? 'text-[#FFFFFF]/80' : 'text-[#222222]'}`}>
+            <p className={`text-xs ${aiConfig.activeModelPreset === 'roboflow-yolo' ? 'text-[#FFFFFF]/80' : 'text-[#444444]'}`}>
               Cloud-hosted inference API for remote detection
             </p>
           </div>
