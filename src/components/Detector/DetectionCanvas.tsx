@@ -6,6 +6,7 @@ import { generateTrackFromBaseCoords } from '../../utils/mockGpsGenerator';
 import { analyzeFrame } from '../../services/potholeDetector';
 import { findBestTrackMatch, PotholeTrack } from '../../services/potholeTracker';
 import { getStreetNameFromCoords } from '../../utils/reverseGeocode';
+import { snapPointToRoadLine } from '../../utils/roadSnap';
 import {
   Play,
   Pause,
@@ -269,6 +270,13 @@ export const DetectionCanvas: React.FC<DetectionCanvasProps> = ({
           } else {
             const trackId = `track-${job.id}-${idx}`;
 
+            // Snap coordinate directly to roadline with slight lane displacement based on box x
+            const boxCenterX = box.x + box.width / 2;
+            const snappedGps = snapPointToRoadLine(
+              { lat: job.gps.latitude, lng: job.gps.longitude },
+              boxCenterX
+            );
+
             const newRecord: PotholeRecord = {
               id: `ph-det-${Date.now()}-${idx}-${Math.floor(Math.random() * 1000)}`,
               runId: `run-${job.runVersion}`,
@@ -276,9 +284,9 @@ export const DetectionCanvas: React.FC<DetectionCanvasProps> = ({
               observationCount: 1,
               timestamp: new Date().toISOString(),
               videoTimeOffset: Number(job.videoTimeSec.toFixed(2)),
-              latitude: job.gps.latitude,
-              longitude: job.gps.longitude,
-              streetName: `Loc: ${job.gps.latitude.toFixed(4)}, ${job.gps.longitude.toFixed(4)}`,
+              latitude: snappedGps.lat,
+              longitude: snappedGps.lng,
+              streetName: `Loc: ${snappedGps.lat.toFixed(4)}, ${snappedGps.lng.toFixed(4)}`,
               severity: box.width > 0.24 || box.height > 0.20 ? 'Critical' : 'Moderate',
               confidence: box.confidence,
               estimatedAreaCm2: Math.max(220, area),
@@ -297,7 +305,7 @@ export const DetectionCanvas: React.FC<DetectionCanvasProps> = ({
             });
             detectedRecordsRef.current = tracksRef.current.map(item => item.record);
             setDetectedRecords([...detectedRecordsRef.current]);
-            void enrichRecordLocation(trackId, job.gps, job.runVersion);
+            void enrichRecordLocation(trackId, { ...job.gps, latitude: snappedGps.lat, longitude: snappedGps.lng }, job.runVersion);
             addLog(
               'success',
               `New Pothole #${tracksRef.current.length} Registered (${box.confidence}% Conf) at ${newRecord.streetName}`
