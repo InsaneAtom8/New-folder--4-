@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { usePotholes } from '../../context/PotholeContext';
 import { PotholeRecord, RepairStatus, SeverityLevel } from '../../types/pothole';
+import { snapPointToRoadLine } from '../../utils/roadSnap';
+import { LBS_MARG_CORRIDOR_WAYPOINTS } from '../../utils/mockGpsGenerator';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { 
@@ -40,18 +42,28 @@ export const PotholeMap: React.FC = () => {
   const [showHeatmap, setShowHeatmap] = useState(false);
   const [tileMode, setTileMode] = useState<'dark' | 'satellite'>('dark');
 
-  // Filtered dataset
-  const filteredPotholes = potholes.filter((p) => {
-    if (filterSeverity !== 'All' && p.severity !== filterSeverity) return false;
-    if (filterStatus !== 'All' && p.repairStatus !== filterStatus) return false;
-    if (searchQuery.trim().length > 0) {
-      const q = searchQuery.toLowerCase();
-      const matchStreet = p.streetName?.toLowerCase().includes(q);
-      const matchId = p.id.toLowerCase().includes(q);
-      if (!matchStreet && !matchId) return false;
-    }
-    return true;
-  });
+  // Filtered dataset (automatically snapped to roadlines)
+  const filteredPotholes = potholes
+    .map((p) => {
+      const boxCenterX = p.boundingBox ? p.boundingBox.x + p.boundingBox.width / 2 : undefined;
+      const snapped = snapPointToRoadLine({ lat: p.latitude, lng: p.longitude }, boxCenterX);
+      return {
+        ...p,
+        latitude: snapped.lat,
+        longitude: snapped.lng,
+      };
+    })
+    .filter((p) => {
+      if (filterSeverity !== 'All' && p.severity !== filterSeverity) return false;
+      if (filterStatus !== 'All' && p.repairStatus !== filterStatus) return false;
+      if (searchQuery.trim().length > 0) {
+        const q = searchQuery.toLowerCase();
+        const matchStreet = p.streetName?.toLowerCase().includes(q);
+        const matchId = p.id.toLowerCase().includes(q);
+        if (!matchStreet && !matchId) return false;
+      }
+      return true;
+    });
 
   // Initialize Leaflet Map
   useEffect(() => {
@@ -107,7 +119,7 @@ export const PotholeMap: React.FC = () => {
     }).addTo(map);
   }, [tileMode]);
 
-  // Update Markers
+  // Update Markers & Road Alignment Polyline
   useEffect(() => {
     if (!mapRef.current) return;
     const map = mapRef.current;
@@ -115,6 +127,17 @@ export const PotholeMap: React.FC = () => {
     // Clear old markers
     Object.values(markersRef.current).forEach((m) => m.remove());
     markersRef.current = {};
+
+    // Render road centerline guidance line on map
+    const roadPolyline = L.polyline(
+      LBS_MARG_CORRIDOR_WAYPOINTS.map(w => [w.lat, w.lng]),
+      {
+        color: '#000000',
+        weight: 3,
+        opacity: 0.25,
+        dashArray: '6, 8',
+      }
+    ).addTo(map);
 
     filteredPotholes.forEach((pothole) => {
       const customIcon = createCustomMarkerIcon(pothole.severity, pothole.repairStatus);
@@ -131,8 +154,12 @@ export const PotholeMap: React.FC = () => {
     // Auto-fit bounds if records exist
     if (filteredPotholes.length > 0) {
       const bounds = L.latLngBounds(filteredPotholes.map(p => [p.latitude, p.longitude]));
-      map.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 });
+      map.fitBounds(bounds, { padding: [40, 40], maxZoom: 16 });
     }
+
+    return () => {
+      roadPolyline.remove();
+    };
   }, [filteredPotholes]);
 
   // Fly to selected pothole when changed
